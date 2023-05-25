@@ -142,6 +142,8 @@ CLASS zcl_package_json IMPLEMENTATION.
           iv_path = '/'
           iv_val  = ms_package_json ).
 
+        li_json = li_json->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
+
         IF iv_complete = abap_false.
           li_json = li_json->filter( zcl_ajson_filter_lib=>create_empty_filter( ) ).
           IF ms_package_json-private = abap_false.
@@ -300,7 +302,8 @@ CLASS zcl_package_json IMPLEMENTATION.
     DATA:
       ls_dependency TYPE zif_package_json=>ty_dependency,
       ls_person     TYPE zif_package_json=>ty_person,
-      lv_value      TYPE string.
+      lv_value      TYPE string,
+      lt_values     TYPE string_table.
 
     IF zif_package_json~is_valid_name( is_package_json-name ) = abap_false.
       zcx_package_json=>raise( |Invalid name: { is_package_json-name }| ).
@@ -342,7 +345,9 @@ CLASS zcl_package_json IMPLEMENTATION.
       zcx_package_json=>raise( |Invalid repository URL: { is_package_json-repository-url }| ).
     ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-contributors INTO ls_person.
+      COLLECT ls_person-name INTO lt_values.
       IF zif_package_json~is_valid_email( ls_person-email ) = abap_false.
         zcx_package_json=>raise( |Invalid contributor email: { ls_person-name } { ls_person-email }| ).
       ENDIF.
@@ -350,8 +355,13 @@ CLASS zcl_package_json IMPLEMENTATION.
         zcx_package_json=>raise( |Invalid contributor URL: { ls_person-name } { ls_person-url }| ).
       ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-contributors ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate contributors| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-maintainers INTO ls_person.
+      COLLECT ls_person-name INTO lt_values.
       IF zif_package_json~is_valid_email( ls_person-email ) = abap_false.
         zcx_package_json=>raise( |Invalid maintainer email: { ls_person-name } { ls_person-email }| ).
       ENDIF.
@@ -359,8 +369,13 @@ CLASS zcl_package_json IMPLEMENTATION.
         zcx_package_json=>raise( |Invalid maintainer URL: { ls_person-name } { ls_person-url }| ).
       ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-maintainers ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate maintainers| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-dependencies INTO ls_dependency.
+      COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
         zcx_package_json=>raise( |Invalid dependency name: { ls_dependency-name }| ).
       ENDIF.
@@ -368,32 +383,68 @@ CLASS zcl_package_json IMPLEMENTATION.
         zcx_package_json=>raise( |Invalid dependency version: { ls_dependency-name } { ls_dependency-version }| ).
       ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-dependencies ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate dependencies| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-dev_dependencies INTO ls_dependency.
+      COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
         zcx_package_json=>raise( |Invalid dev dependency name: { ls_dependency-name }| ).
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
         zcx_package_json=>raise( |Invalid dev dependency version: { ls_dependency-name } { ls_dependency-version }| ).
       ENDIF.
+      READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
+      IF sy-subrc = 0.
+        zcx_package_json=>raise( |Dev dependency { ls_dependency-name } already included in dependencies| ).
+      ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-dev_dependencies ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate dev dependencies| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-optional_dependencies INTO ls_dependency.
+      COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
         zcx_package_json=>raise( |Invalid opt dependency name: { ls_dependency-name }| ).
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
         zcx_package_json=>raise( |Invalid opt dependency version: { ls_dependency-name } { ls_dependency-version }| ).
       ENDIF.
+      READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
+      IF sy-subrc = 0.
+        zcx_package_json=>raise( |Opt dependency { ls_dependency-name } already included in dependencies| ).
+      ENDIF.
+      READ TABLE is_package_json-dev_dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
+      IF sy-subrc = 0.
+        zcx_package_json=>raise( |Opt dependency { ls_dependency-name } already included in dev dependencies| ).
+      ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-optional_dependencies ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate optional dependencies| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-bundled_dependencies INTO lv_value.
+      COLLECT lv_value INTO lt_values.
       IF zif_package_json~is_valid_name( lv_value ) = abap_false.
         zcx_package_json=>raise( |Invalid bundled dependency name: { ls_dependency-name }| ).
       ENDIF.
+      READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
+      IF sy-subrc <> 0.
+        zcx_package_json=>raise( |Bundeled dependency { ls_dependency-name } not included in dependencies| ).
+      ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-bundled_dependencies ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate bundled dependencies| ).
+    ENDIF.
 
+    CLEAR lt_values.
     LOOP AT is_package_json-engines INTO ls_dependency.
+      COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
         zcx_package_json=>raise( |Invalid engine name: { ls_dependency-name }| ).
       ENDIF.
@@ -401,6 +452,9 @@ CLASS zcl_package_json IMPLEMENTATION.
         zcx_package_json=>raise( |Invalid engine version: { ls_dependency-name } { ls_dependency-version }| ).
       ENDIF.
     ENDLOOP.
+    IF lines( is_package_json-engines ) <> lines( lt_values ).
+      zcx_package_json=>raise( |Duplicate engines| ).
+    ENDIF.
 
   ENDMETHOD.
 ENDCLASS.

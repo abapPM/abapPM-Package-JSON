@@ -1,5 +1,11 @@
 INTERFACE zif_package_json PUBLIC.
 
+  " Schema for package.apm.json
+  "
+  " The definition of package json for apm is closely aligned with npm.
+  "
+  " https://docs.npmjs.com/cli/v9/configuring-npm/package-json#devdependencies
+
   TYPES:
     ty_email TYPE string,
     ty_uri   TYPE string,
@@ -29,6 +35,7 @@ INTERFACE zif_package_json PUBLIC.
       contributors          TYPE STANDARD TABLE OF ty_person WITH KEY name,
       maintainers           TYPE STANDARD TABLE OF ty_person WITH KEY name,
       main                  TYPE string,
+      man                   TYPE string_table,
       type                  TYPE string,
       BEGIN OF repository,
         type      TYPE string,

@@ -10,13 +10,14 @@ INTERFACE zif_package_json PUBLIC.
     ty_email TYPE string,
     ty_uri   TYPE string,
     BEGIN OF ty_person,
-      name  TYPE string,
-      url   TYPE ty_uri,
-      email TYPE ty_email,
+      name   TYPE string,
+      url    TYPE ty_uri,
+      email  TYPE ty_email,
+      avatar TYPE ty_uri,
     END OF ty_person,
     BEGIN OF ty_dependency,
-      name    TYPE string,
-      version TYPE string,
+      name  TYPE string,
+      range TYPE string,
     END OF ty_dependency.
 
   TYPES:
@@ -62,6 +63,47 @@ INTERFACE zif_package_json PUBLIC.
       END OF dist,
       readme                TYPE string,
     END OF ty_package_json.
+
+  TYPES:
+    " Copy of schema but with out dependencies (instead of array)
+    BEGIN OF ty_package_json_wo_deps,
+      name                  TYPE string,
+      version               TYPE string,
+      description           TYPE string,
+      keywords              TYPE string_table,
+      homepage              TYPE string,
+      BEGIN OF bugs,
+        url   TYPE ty_uri,
+        email TYPE ty_email,
+      END OF bugs,
+      license               TYPE string,
+      author                TYPE ty_person,
+      contributors          TYPE STANDARD TABLE OF ty_person WITH KEY name,
+      maintainers           TYPE STANDARD TABLE OF ty_person WITH KEY name,
+      main                  TYPE string,
+      man                   TYPE string_table,
+      type                  TYPE string,
+      BEGIN OF repository,
+        type      TYPE string,
+        url       TYPE ty_uri,
+        directory TYPE string,
+      END OF repository,
+      BEGIN OF funding,
+        type TYPE string,
+        url  TYPE ty_uri,
+      END OF funding,
+      bundled_dependencies  TYPE string_table,
+      package_manager       TYPE string,
+      os                    TYPE string_table,
+      cpu                   TYPE string_table,
+      db                    TYPE string_table,
+      private               TYPE abap_bool,
+      BEGIN OF dist,
+        shasum  TYPE string,
+        tarball TYPE string,
+      END OF dist,
+      readme                TYPE string,
+    END OF ty_package_json_wo_deps.
 
   CONSTANTS:
     c_obj_type TYPE tadir-object VALUE 'ZAPM'.
@@ -129,8 +171,8 @@ INTERFACE zif_package_json PUBLIC.
   CLASS-METHODS validate
     IMPORTING
       !is_package_json TYPE ty_package_json
-    RAISING
-      zcx_package_json.
+    RETURNING
+      VALUE(result) TYPE string_table.
 
   CLASS-METHODS is_valid_sap_package
     IMPORTING

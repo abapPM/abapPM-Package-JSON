@@ -30,7 +30,10 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
       get_complete FOR TESTING RAISING zcx_package_json,
       get_package FOR TESTING RAISING zcx_package_json,
       set_package FOR TESTING RAISING zcx_package_json,
-      dependencies FOR TESTING RAISING zcx_package_json.
+      get_persons FOR TESTING RAISING zcx_package_json,
+      set_persons FOR TESTING RAISING zcx_package_json,
+      dependencies_json_to_abap FOR TESTING RAISING zcx_package_json,
+      dependencies_abap_to_json FOR TESTING RAISING zcx_package_json.
 
 ENDCLASS.
 
@@ -152,9 +155,31 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD get_complete.
 
-    DATA lv_json TYPE string.
+    DATA:
+      lv_json TYPE string,
+      ls_json TYPE zif_package_json=>ty_package_json,
+      ls_dep  TYPE zif_package_json=>ty_dependency.
 
-    init_test( '$TEST,test,1.0.0' ).
+    init_test( '$TEST' ).
+
+    CLEAR ls_json.
+    ls_json-name    = 'test'.
+    ls_json-version = '1.0.0'.
+
+    ls_dep-name  = 'dep2'.
+    ls_dep-range = '2.0.0'.
+    INSERT ls_dep INTO TABLE ls_json-dependencies.
+    ls_dep-name  = 'dep3'.
+    ls_dep-range = '>3'.
+    INSERT ls_dep INTO TABLE ls_json-dev_dependencies.
+    ls_dep-name  = 'dep4'.
+    ls_dep-range = '^4.1.0'.
+    INSERT ls_dep INTO TABLE ls_json-optional_dependencies.
+    ls_dep-name  = 'abap'.
+    ls_dep-range = '7.5.0'.
+    INSERT ls_dep INTO TABLE ls_json-engines.
+
+    mi_package->set( ls_json ).
 
     lv_json = |\{\n|
       && |  "name": "test",\n|
@@ -170,7 +195,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  "author": \{\n|
       && |    "name": "",\n|
       && |    "url": "",\n|
-      && |    "email": ""\n|
+      && |    "email": "",\n|
+      && |    "avatar": ""\n|
       && |  \},\n|
       && |  "contributors": [],\n|
       && |  "maintainers": [],\n|
@@ -186,12 +212,20 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |    "type": "",\n|
       && |    "url": ""\n|
       && |  \},\n|
-      && |  "dependencies": [],\n|
-      && |  "devDependencies": [],\n|
-      && |  "optionalDependencies": [],\n|
+      && |  "dependencies": \{\n|
+      && |    "dep2": "2.0.0"\n|
+      && |  \},\n|
+      && |  "devDependencies": \{\n|
+      && |    "dep3": ">3"\n|
+      && |  \},\n|
+      && |  "optionalDependencies": \{\n|
+      && |    "dep4": "^4.1.0"\n|
+      && |  \},\n|
       && |  "bundledDependencies": [],\n|
       && |  "packageManager": "",\n|
-      && |  "engines": [],\n|
+      && |  "engines": \{\n|
+      && |    "abap": "7.5.0"\n|
+      && |  \},\n|
       && |  "os": [],\n|
       && |  "cpu": [],\n|
       && |  "db": [],\n|
@@ -290,9 +324,59 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD dependencies.
+  METHOD get_persons.
+
+  ENDMETHOD.
+
+  METHOD set_persons.
+
+  ENDMETHOD.
+
+  METHOD dependencies_json_to_abap.
 
     DATA:
+      lv_json TYPE string,
+      ls_json TYPE zif_package_json=>ty_package_json,
+      ls_dep  TYPE zif_package_json=>ty_dependency.
+
+    init_test( '$TEST' ).
+
+    lv_json = |\{\n|
+      && |  "name": "test",\n|
+      && |  "version": "1.0.0",\n|
+      && |  "dependencies": \{\n|
+      && |    "dep1": "2.0.0",\n|
+      && |    "dep2": ">3",\n|
+      && |    "dep3": "^4.1.0"\n|
+      && |  \}\n|
+      && |\}|.
+
+    mi_package->set_json( lv_json ).
+
+    CLEAR ls_json.
+    ls_json-name    = 'test'.
+    ls_json-version = '1.0.0'.
+
+    ls_dep-name  = 'dep1'.
+    ls_dep-range = '2.0.0'.
+    INSERT ls_dep INTO TABLE ls_json-dependencies.
+    ls_dep-name  = 'dep2'.
+    ls_dep-range = '>3'.
+    INSERT ls_dep INTO TABLE ls_json-dependencies.
+    ls_dep-name  = 'dep3'.
+    ls_dep-range = '^4.1.0'.
+    INSERT ls_dep INTO TABLE ls_json-dependencies.
+
+    cl_abap_unit_assert=>assert_equals(
+      act = mi_package->get( )
+      exp = ls_json ).
+
+  ENDMETHOD.
+
+  METHOD dependencies_abap_to_json.
+
+    DATA:
+      lv_json TYPE string,
       ls_json TYPE zif_package_json=>ty_package_json,
       ls_dep  TYPE zif_package_json=>ty_dependency.
 
@@ -302,21 +386,31 @@ CLASS ltcl_package_json IMPLEMENTATION.
     ls_json-name    = 'test'.
     ls_json-version = '1.0.0'.
 
-    ls_dep-name    = 'dep1'.
-    ls_dep-version = '2.0.0'.
+    ls_dep-name  = 'dep1'.
+    ls_dep-range = '2.0.0'.
     INSERT ls_dep INTO TABLE ls_json-dependencies.
-    ls_dep-name    = 'dep2'.
-    ls_dep-version = '>3'.
+    ls_dep-name  = 'dep2'.
+    ls_dep-range = '>3'.
     INSERT ls_dep INTO TABLE ls_json-dependencies.
-    ls_dep-name    = 'dep3'.
-    ls_dep-version = '^4.1.0'.
+    ls_dep-name  = 'dep3'.
+    ls_dep-range = '^4.1.0'.
     INSERT ls_dep INTO TABLE ls_json-dependencies.
 
     mi_package->set( ls_json ).
 
-    test_compare(
-      is_json = ls_json
-      iv_json = '{ "name": "test", "version": "1.0.0", "dependencies": { "dep1": "2.0.0", "dep2": ">3", "dep3": "^4.1.0"}}' ).
+    lv_json = |\{\n|
+      && |  "name": "test",\n|
+      && |  "version": "1.0.0",\n|
+      && |  "dependencies": \{\n|
+      && |    "dep1": "2.0.0",\n|
+      && |    "dep2": ">3",\n|
+      && |    "dep3": "^4.1.0"\n|
+      && |  \}\n|
+      && |\}|.
+
+    cl_abap_unit_assert=>assert_equals(
+      act = mi_package->get_json( )
+      exp = lv_json ).
 
   ENDMETHOD.
 ENDCLASS.

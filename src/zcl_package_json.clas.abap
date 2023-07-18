@@ -48,7 +48,13 @@ CLASS zcl_package_json DEFINITION
     DATA:
       mv_package      TYPE devclass,
       ms_package_json TYPE zif_package_json=>ty_package_json,
-      mo_persist      TYPE REF TO zcl_persistence.
+      mo_persist      TYPE REF TO zcl_package_json_db.
+
+    CLASS-METHODS sort_dependencies
+      IMPORTING
+        !is_package_json TYPE zif_package_json=>ty_package_json
+      RETURNING
+        VALUE(result)    TYPE zif_package_json=>ty_package_json.
 
 ENDCLASS.
 
@@ -123,6 +129,15 @@ CLASS zcl_package_json IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD sort_dependencies.
+    result = is_package_json.
+    SORT result-dependencies BY name.
+    SORT result-dev_dependencies BY name.
+    SORT result-optional_dependencies BY name.
+    SORT result-engines BY name.
+  ENDMETHOD.
+
+
   METHOD zif_package_json~delete.
     mo_persist->delete( ).
   ENDMETHOD.
@@ -135,7 +150,10 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD zif_package_json~get_json.
 
-    DATA li_json TYPE REF TO zif_ajson.
+    DATA:
+      li_json       TYPE REF TO zif_ajson,
+      ls_dependency TYPE zif_package_json=>ty_dependency,
+      lx_error      TYPE REF TO zcx_ajson_error.
 
     TRY.
         li_json = zcl_ajson=>new( )->keep_item_order( )->set(
@@ -144,12 +162,39 @@ CLASS zcl_package_json IMPLEMENTATION.
 
         li_json = li_json->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
 
+        " Transpose dependencies
+        li_json->setx( '/dependencies:{ }' ).
+        LOOP AT ms_package_json-dependencies INTO ls_dependency.
+          li_json->set(
+            iv_path = '/dependencies/' && ls_dependency-name
+            iv_val  = ls_dependency-range ).
+        ENDLOOP.
+        li_json->setx( '/devDependencies:{ }' ).
+        LOOP AT ms_package_json-dev_dependencies INTO ls_dependency.
+          li_json->set(
+            iv_path = '/devDependencies/' && ls_dependency-name
+            iv_val  = ls_dependency-range ).
+        ENDLOOP.
+        li_json->setx( '/optionalDependencies:{ }' ).
+        LOOP AT ms_package_json-optional_dependencies INTO ls_dependency.
+          li_json->set(
+            iv_path = '/optionalDependencies/' && ls_dependency-name
+            iv_val  = ls_dependency-range ).
+        ENDLOOP.
+        li_json->setx( '/engines:{ }' ).
+        LOOP AT ms_package_json-engines INTO ls_dependency.
+          li_json->set(
+            iv_path = '/engines/' && ls_dependency-name
+            iv_val  = ls_dependency-range ).
+        ENDLOOP.
+
         IF iv_complete = abap_false.
           li_json = li_json->filter( zcl_ajson_filter_lib=>create_empty_filter( ) ).
           IF ms_package_json-private = abap_false.
             li_json = li_json->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = '/private' ) ).
           ENDIF.
         ENDIF.
+
         result = li_json->stringify( 2 ).
       CATCH zcx_ajson_error.
     ENDTRY.
@@ -158,12 +203,16 @@ CLASS zcl_package_json IMPLEMENTATION.
 
 
   METHOD zif_package_json~is_valid.
+
+    DATA lt_errors TYPE string_table.
+
     TRY.
-        zif_package_json~validate( ms_package_json ).
-        result = abap_true.
+        lt_errors = zif_package_json~validate( ms_package_json ).
+        result = boolc( lt_errors IS INITIAL ).
       CATCH zcx_package_json.
         result = abap_false.
     ENDTRY.
+
   ENDMETHOD.
 
 
@@ -208,6 +257,7 @@ CLASS zcl_package_json IMPLEMENTATION.
         e_package_type = lv_package_type
       EXCEPTIONS
         OTHERS         = 1.
+
     result = boolc( sy-subrc =  0 AND lv_package_type CA '$ZNJ' ).
 
     " Workaround for missing validation of empty namespace
@@ -256,7 +306,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
 
   METHOD zif_package_json~load.
-    zif_package_json~set_json( mo_persist->load( ) ).
+    zif_package_json~set_json( mo_persist->load( )-data ).
     result = me.
   ENDMETHOD.
 
@@ -269,7 +319,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD zif_package_json~set.
     zif_package_json~validate( is_json ).
-    ms_package_json = is_json.
+    ms_package_json = sort_dependencies( is_json ).
     result = me.
   ENDMETHOD.
 
@@ -277,17 +327,43 @@ CLASS zcl_package_json IMPLEMENTATION.
   METHOD zif_package_json~set_json.
 
     DATA:
-      li_json  TYPE REF TO zif_ajson,
-      ls_json  TYPE zif_package_json=>ty_package_json,
-      lx_error TYPE REF TO zcx_ajson_error.
+      li_json         TYPE REF TO zif_ajson,
+      ls_json_wo_deps TYPE zif_package_json=>ty_package_json_wo_deps,
+      ls_dependency   TYPE zif_package_json=>ty_dependency,
+      ls_json         TYPE zif_package_json=>ty_package_json,
+      lx_error        TYPE REF TO zcx_ajson_error.
 
     TRY.
         li_json = zcl_ajson=>parse( iv_json ).
-        li_json->to_abap( IMPORTING ev_container = ls_json ).
+        li_json->to_abap(
+          EXPORTING
+            iv_corresponding = abap_true
+          IMPORTING
+            ev_container     = ls_json_wo_deps ).
+
+        MOVE-CORRESPONDING ls_json_wo_deps TO ls_json.
+
+        " Transpose dependencies
+        LOOP AT li_json->members( '/dependencies' ) INTO ls_dependency-name.
+          ls_dependency-range = li_json->get( '/dependencies/' && ls_dependency-name ).
+          INSERT ls_dependency INTO TABLE ls_json-dependencies.
+        ENDLOOP.
+        LOOP AT li_json->members( '/devDependencies' ) INTO ls_dependency-name.
+          ls_dependency-range = li_json->get( '/devDependencies/' && ls_dependency-name ).
+          INSERT ls_dependency INTO TABLE ls_json-dev_dependencies.
+        ENDLOOP.
+        LOOP AT li_json->members( '/optDependencies' ) INTO ls_dependency-name.
+          ls_dependency-range = li_json->get( '/optDependencies/' && ls_dependency-name ).
+          INSERT ls_dependency INTO TABLE ls_json-optional_dependencies.
+        ENDLOOP.
+        LOOP AT li_json->members( '/engines' ) INTO ls_dependency-name.
+          ls_dependency-range = li_json->get( '/engines/' && ls_dependency-name ).
+          INSERT ls_dependency INTO TABLE ls_json-engines.
+        ENDLOOP.
 
         zif_package_json~validate( ls_json ).
 
-        ms_package_json = ls_json.
+        ms_package_json = sort_dependencies( ls_json ).
       CATCH zcx_ajson_error INTO lx_error.
         zcx_package_json=>raise_with_text( lx_error ).
     ENDTRY.
@@ -306,154 +382,154 @@ CLASS zcl_package_json IMPLEMENTATION.
       lt_values     TYPE string_table.
 
     IF zif_package_json~is_valid_name( is_package_json-name ) = abap_false.
-      zcx_package_json=>raise( |Invalid name: { is_package_json-name }| ).
+      INSERT |Invalid name: { is_package_json-name }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_version( is_package_json-version ) = abap_false.
-      zcx_package_json=>raise( |Invalid version: { is_package_json-version }| ).
+      INSERT |Invalid version: { is_package_json-version }| INTO TABLE result.
     ENDIF.
 
     IF is_package_json-private <> abap_false AND is_package_json-private <> abap_true.
-      zcx_package_json=>raise( |Invalid private flag: { is_package_json-private }| ).
+      INSERT |Invalid private flag: { is_package_json-private }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_url( is_package_json-homepage ) = abap_false.
-      zcx_package_json=>raise( |Invalid homepage URL: { is_package_json-homepage }| ).
+      INSERT |Invalid homepage URL: { is_package_json-homepage }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_url( is_package_json-bugs-url ) = abap_false.
-      zcx_package_json=>raise( |Invalid bugs URL: { is_package_json-bugs-url }| ).
+      INSERT |Invalid bugs URL: { is_package_json-bugs-url }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_email( is_package_json-bugs-email ) = abap_false.
-      zcx_package_json=>raise( |Invalid bugs email: { is_package_json-bugs-email }| ).
+      INSERT |Invalid bugs email: { is_package_json-bugs-email }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_email( is_package_json-author-email ) = abap_false.
-      zcx_package_json=>raise( |Invalid author email: { is_package_json-author-email }| ).
+      INSERT |Invalid author email: { is_package_json-author-email }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_url( is_package_json-author-url ) = abap_false.
-      zcx_package_json=>raise( |Invalid author URL: { is_package_json-author-url }| ).
+      INSERT |Invalid author URL: { is_package_json-author-url }| INTO TABLE result.
     ENDIF.
 
     IF is_package_json-type <> '' AND is_package_json-type <> 'app' AND is_package_json-type <> 'module'.
-      zcx_package_json=>raise( |Invalid type: { is_package_json-type }| ).
+      INSERT |Invalid type: { is_package_json-type }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_url( is_package_json-repository-url ) = abap_false.
-      zcx_package_json=>raise( |Invalid repository URL: { is_package_json-repository-url }| ).
+      INSERT |Invalid repository URL: { is_package_json-repository-url }| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-contributors INTO ls_person.
       COLLECT ls_person-name INTO lt_values.
       IF zif_package_json~is_valid_email( ls_person-email ) = abap_false.
-        zcx_package_json=>raise( |Invalid contributor email: { ls_person-name } { ls_person-email }| ).
+        INSERT |Invalid contributor email: { ls_person-name } { ls_person-email }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_url( ls_person-url ) = abap_false.
-        zcx_package_json=>raise( |Invalid contributor URL: { ls_person-name } { ls_person-url }| ).
+        INSERT |Invalid contributor URL: { ls_person-name } { ls_person-url }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-contributors ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate contributors| ).
+      INSERT |Duplicate contributors| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-maintainers INTO ls_person.
       COLLECT ls_person-name INTO lt_values.
       IF zif_package_json~is_valid_email( ls_person-email ) = abap_false.
-        zcx_package_json=>raise( |Invalid maintainer email: { ls_person-name } { ls_person-email }| ).
+        INSERT |Invalid maintainer email: { ls_person-name } { ls_person-email }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_url( ls_person-url ) = abap_false.
-        zcx_package_json=>raise( |Invalid maintainer URL: { ls_person-name } { ls_person-url }| ).
+        INSERT |Invalid maintainer URL: { ls_person-name } { ls_person-url }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-maintainers ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate maintainers| ).
+      INSERT |Duplicate maintainers| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        zcx_package_json=>raise( |Invalid dependency name: { ls_dependency-name }| ).
+        INSERT |Invalid dependency name: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
-      IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
-        zcx_package_json=>raise( |Invalid dependency version: { ls_dependency-name } { ls_dependency-version }| ).
+      IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
+        INSERT |Invalid dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-dependencies ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate dependencies| ).
+      INSERT |Duplicate dependencies| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-dev_dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        zcx_package_json=>raise( |Invalid dev dependency name: { ls_dependency-name }| ).
+        INSERT |Invalid dev dependency name: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
-      IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
-        zcx_package_json=>raise( |Invalid dev dependency version: { ls_dependency-name } { ls_dependency-version }| ).
+      IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
+        INSERT |Invalid dev dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
       ENDIF.
       READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
       IF sy-subrc = 0.
-        zcx_package_json=>raise( |Dev dependency { ls_dependency-name } already included in dependencies| ).
+        INSERT |Dev dependency { ls_dependency-name } already included in dependencies| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-dev_dependencies ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate dev dependencies| ).
+      INSERT |Duplicate dev dependencies| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-optional_dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        zcx_package_json=>raise( |Invalid opt dependency name: { ls_dependency-name }| ).
+        INSERT |Invalid opt dependency name: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
-      IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
-        zcx_package_json=>raise( |Invalid opt dependency version: { ls_dependency-name } { ls_dependency-version }| ).
+      IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
+        INSERT |Invalid opt dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
       ENDIF.
       READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
       IF sy-subrc = 0.
-        zcx_package_json=>raise( |Opt dependency { ls_dependency-name } already included in dependencies| ).
+        INSERT |Opt dependency { ls_dependency-name } already included in dependencies| INTO TABLE result.
       ENDIF.
       READ TABLE is_package_json-dev_dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
       IF sy-subrc = 0.
-        zcx_package_json=>raise( |Opt dependency { ls_dependency-name } already included in dev dependencies| ).
+        INSERT |Opt dependency { ls_dependency-name } already included in dev dependencies| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-optional_dependencies ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate optional dependencies| ).
+      INSERT |Duplicate optional dependencies| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-bundled_dependencies INTO lv_value.
       COLLECT lv_value INTO lt_values.
       IF zif_package_json~is_valid_name( lv_value ) = abap_false.
-        zcx_package_json=>raise( |Invalid bundled dependency name: { ls_dependency-name }| ).
+        INSERT |Invalid bundled dependency name: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
       IF sy-subrc <> 0.
-        zcx_package_json=>raise( |Bundeled dependency { ls_dependency-name } not included in dependencies| ).
+        INSERT |Bundeled dependency { ls_dependency-name } not included in dependencies| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-bundled_dependencies ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate bundled dependencies| ).
+      INSERT |Duplicate bundled dependencies| INTO TABLE result.
     ENDIF.
 
     CLEAR lt_values.
     LOOP AT is_package_json-engines INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        zcx_package_json=>raise( |Invalid engine name: { ls_dependency-name }| ).
+        INSERT |Invalid engine name: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
-      IF zif_package_json~is_valid_version_range( ls_dependency-version ) = abap_false.
-        zcx_package_json=>raise( |Invalid engine version: { ls_dependency-name } { ls_dependency-version }| ).
+      IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
+        INSERT |Invalid engine version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
     IF lines( is_package_json-engines ) <> lines( lt_values ).
-      zcx_package_json=>raise( |Duplicate engines| ).
+      INSERT |Duplicate engines| INTO TABLE result.
     ENDIF.
 
   ENDMETHOD.

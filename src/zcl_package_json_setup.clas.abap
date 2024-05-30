@@ -12,6 +12,14 @@ CLASS zcl_package_json_setup DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
 
+    CLASS-METHODS tobj_create
+      RAISING
+        zcx_package_json.
+
+    CLASS-METHODS tobj_exists
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS table_create
       RAISING
         zcx_package_json.
@@ -143,6 +151,10 @@ CLASS zcl_package_json_setup IMPLEMENTATION.
 
     IF lock_exists( ) = abap_false.
       lock_create( ).
+    ENDIF.
+
+    IF tobj_exists( ) = abap_false.
+      tobj_create( ).
     ENDIF.
 
   ENDMETHOD.
@@ -278,6 +290,109 @@ CLASS zcl_package_json_setup IMPLEMENTATION.
 
     SELECT SINGLE tabname FROM dd02l INTO lv_tabname
       WHERE tabname = zcl_package_json_db=>c_tabname.
+    result = boolc( sy-subrc = 0 ).
+
+  ENDMETHOD.
+
+
+  METHOD tobj_create.
+
+    DATA:
+      ls_objh  TYPE objh,
+      ls_objt  TYPE objt,
+      lt_objs  TYPE tt_objs,
+      lt_objsl TYPE tt_objsl,
+      lt_objm  TYPE tt_objm.
+
+    FIELD-SYMBOLS:
+      <ls_objs>  TYPE objs,
+      <ls_objsl> TYPE objsl,
+      <ls_objm>  TYPE objm.
+
+    ls_objh-objectname = zif_package_json=>c_obj_type.
+    ls_objh-objecttype = 'L'.
+    ls_objh-objcateg   = 'APPL'.
+    ls_objh-checkid    = 'L'.
+    ls_objh-objnamelen = 30.
+    ls_objh-objtransp  = '2'.
+    ls_objh-objcharset = '1'.
+
+    ls_objt-language   = zcl_package_json_db=>c_english.
+    ls_objt-objectname = zif_package_json=>c_obj_type.
+    ls_objt-objecttype = 'L'.
+    ls_objt-ddtext     = 'apm'.
+
+    APPEND INITIAL LINE TO lt_objs ASSIGNING <ls_objs>.
+    <ls_objs>-objectname = zif_package_json=>c_obj_type.
+    <ls_objs>-objecttype = 'L'.
+    <ls_objs>-tabname    = zcl_package_json_db=>c_tabname.
+    <ls_objs>-ddic       = abap_true.
+    <ls_objs>-prim_table = abap_true.
+
+    APPEND INITIAL LINE TO lt_objsl ASSIGNING <ls_objsl>.
+    <ls_objsl>-objectname = zif_package_json=>c_obj_type.
+    <ls_objsl>-objecttype = 'L'.
+    <ls_objsl>-trwcount   = '01'.
+    <ls_objsl>-tpgmid     = 'R3TR'.
+    <ls_objsl>-tobject    = 'TABU'.
+    <ls_objsl>-tobj_name  = zcl_package_json_db=>c_tabname.
+    <ls_objsl>-tobjkey    = '/&/*'.
+    <ls_objsl>-masknlen   = 7.
+    <ls_objsl>-maskklen   = 2.
+    <ls_objsl>-prim_table = abap_true.
+
+    CALL FUNCTION 'OBJ_GENERATE'
+      EXPORTING
+        iv_korrnum            = ''
+        iv_objectname         = ls_objh-objectname
+        iv_objecttype         = ls_objh-objecttype
+        iv_maint_mode         = 'I'
+        iv_objecttext         = ls_objt-ddtext
+        iv_objcateg           = ls_objh-objcateg
+        iv_objtransp          = ls_objh-objtransp
+        iv_devclass           = zcl_package_json_db=>c_devclass
+      TABLES
+        tt_v_obj_s            = lt_objs
+        tt_objm               = lt_objm
+      EXCEPTIONS
+        illegal_call          = 1
+        object_not_found      = 2
+        generate_error        = 3
+        transport_error       = 4
+        object_enqueue_failed = 5
+        OTHERS                = 6.
+    IF sy-subrc <> 0.
+      " TOBJ has to be saved/generated after the DDIC tables have been activated
+      zcx_package_json=>raise_t100( ).
+    ENDIF.
+
+    CALL FUNCTION 'OBJ_SET_IMPORTABLE'
+      EXPORTING
+        iv_objectname         = ls_objh-objectname
+        iv_objecttype         = ls_objh-objecttype
+        iv_importable         = ls_objh-importable
+      EXCEPTIONS
+        object_not_defined    = 1
+        invalid               = 2
+        transport_error       = 3
+        object_enqueue_failed = 4
+        OTHERS                = 5.
+    IF sy-subrc <> 0.
+      zcx_package_json=>raise_t100( ).
+    ENDIF.
+
+    UPDATE objh SET objtransp = ls_objh-objtransp
+      WHERE objectname = ls_objh-objectname AND objecttype = ls_objh-objecttype.
+
+  ENDMETHOD.
+
+
+  METHOD tobj_exists.
+
+    DATA lv_objectname TYPE objh-objectname.
+
+    SELECT SINGLE objectname FROM objh INTO lv_objectname
+      WHERE objectname = zif_package_json=>c_obj_type AND objecttype = 'L'.
     result = boolc( sy-subrc = 0 ).
 
   ENDMETHOD.

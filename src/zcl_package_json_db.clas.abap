@@ -4,6 +4,12 @@ CLASS zcl_package_json_db DEFINITION
   CREATE PRIVATE
   GLOBAL FRIENDS zcl_package_json.
 
+************************************************************************
+* Package JSON - Persistence
+*
+* Copyright (c) Marc Bernard <https://marcbernardtools.com/>
+* SPDX-License-Identifier: MIT
+************************************************************************
   PUBLIC SECTION.
 
     TYPES:
@@ -26,7 +32,7 @@ CLASS zcl_package_json_db DEFINITION
       BEGIN OF c_type,
         package_json TYPE ty_abappm-type VALUE 'PACKAGE_JSON',
         readme       TYPE ty_abappm-type VALUE 'README',
-        favicon      TYPE ty_abappm-type VALUE 'FAVICON',
+        favicon      TYPE ty_abappm-type VALUE 'FAVICON', " FUTURE
       END OF c_type.
 
     METHODS constructor

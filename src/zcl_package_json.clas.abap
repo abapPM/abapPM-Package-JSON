@@ -3,6 +3,12 @@ CLASS zcl_package_json DEFINITION
   FINAL
   CREATE PRIVATE.
 
+************************************************************************
+* Package JSON
+*
+* Copyright (c) Marc Bernard <https://marcbernardtools.com/>
+* SPDX-License-Identifier: MIT
+************************************************************************
   PUBLIC SECTION.
 
     INTERFACES zif_package_json.
@@ -216,6 +222,35 @@ CLASS zcl_package_json IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_package_json~is_valid_cpu.
+
+    result = boolc(
+      iv_cpu IS INITIAL OR
+      iv_cpu = zif_package_json~c_cpu-x86_64 OR
+      iv_cpu = zif_package_json~c_cpu-power_pc OR
+      iv_cpu = zif_package_json~c_cpu-sparc ).
+
+  ENDMETHOD.
+
+
+  METHOD zif_package_json~is_valid_db.
+
+    result = boolc(
+      iv_db IS INITIAL OR
+      iv_db = zif_package_json~c_db-adabas_d OR
+      iv_db = zif_package_json~c_db-db2 OR
+      iv_db = zif_package_json~c_db-db400 OR
+      iv_db = zif_package_json~c_db-db6 OR
+      iv_db = zif_package_json~c_db-hdb OR
+      iv_db = zif_package_json~c_db-informix OR
+      iv_db = zif_package_json~c_db-mssql OR
+      iv_db = zif_package_json~c_db-oracle OR
+      iv_db = zif_package_json~c_db-sap_db OR
+      iv_db = zif_package_json~c_db-sybase ).
+
+  ENDMETHOD.
+
+
   METHOD zif_package_json~is_valid_email.
 
     " Email address validation (RFC 5322)
@@ -232,6 +267,16 @@ CLASS zcl_package_json IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_package_json~is_valid_engine.
+
+    result = boolc(
+      iv_engine IS INITIAL OR
+      iv_engine = zif_package_json~c_engine-abap OR
+      iv_engine = zif_package_json~c_engine-apm ).
+
+  ENDMETHOD.
+
+
   METHOD zif_package_json~is_valid_name.
     IF strlen( iv_name )
       BETWEEN zif_package_json~c_package_name-min_length
@@ -242,6 +287,31 @@ CLASS zcl_package_json IMPLEMENTATION.
     ELSE.
       result = abap_false.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD zif_package_json~is_valid_os.
+
+    result = boolc(
+      iv_os IS INITIAL OR
+      iv_os = zif_package_json~c_os-aix OR
+      iv_os = zif_package_json~c_os-hp_ux OR
+      iv_os = zif_package_json~c_os-linux OR
+      iv_os = zif_package_json~c_os-ms_windows OR
+      iv_os = zif_package_json~c_os-os_390 OR
+      iv_os = zif_package_json~c_os-os_400 OR
+      iv_os = zif_package_json~c_os-solaris ).
+
+  ENDMETHOD.
+
+
+  METHOD zif_package_json~is_valid_package_type.
+
+    result = boolc(
+      iv_type IS INITIAL OR
+      iv_type = zif_package_json~c_package_type-commonabap OR
+      iv_type = zif_package_json~c_package_type-module ).
+
   ENDMETHOD.
 
 
@@ -389,6 +459,10 @@ CLASS zcl_package_json IMPLEMENTATION.
       INSERT |Invalid version: { is_package_json-version }| INTO TABLE result.
     ENDIF.
 
+    IF zif_package_json~is_valid_package_type( is_package_json-type ) = abap_false.
+      INSERT |Invalid package type: { is_package_json-type }| INTO TABLE result.
+    ENDIF.
+
     IF is_package_json-private <> abap_false AND is_package_json-private <> abap_true.
       INSERT |Invalid private flag: { is_package_json-private }| INTO TABLE result.
     ENDIF.
@@ -397,12 +471,12 @@ CLASS zcl_package_json IMPLEMENTATION.
       INSERT |Invalid homepage URL: { is_package_json-homepage }| INTO TABLE result.
     ENDIF.
 
-    IF zif_package_json~is_valid_url( is_package_json-bugs-url ) = abap_false.
-      INSERT |Invalid bugs URL: { is_package_json-bugs-url }| INTO TABLE result.
-    ENDIF.
-
     IF zif_package_json~is_valid_email( is_package_json-bugs-email ) = abap_false.
       INSERT |Invalid bugs email: { is_package_json-bugs-email }| INTO TABLE result.
+    ENDIF.
+
+    IF zif_package_json~is_valid_url( is_package_json-bugs-url ) = abap_false.
+      INSERT |Invalid bugs URL: { is_package_json-bugs-url }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_email( is_package_json-author-email ) = abap_false.
@@ -413,8 +487,16 @@ CLASS zcl_package_json IMPLEMENTATION.
       INSERT |Invalid author URL: { is_package_json-author-url }| INTO TABLE result.
     ENDIF.
 
-    IF is_package_json-type <> '' AND is_package_json-type <> 'app' AND is_package_json-type <> 'module'.
-      INSERT |Invalid type: { is_package_json-type }| INTO TABLE result.
+    IF zif_package_json~is_valid_cpu( is_package_json-cpu ) = abap_false.
+      INSERT |Invalid CPU: { is_package_json-cpu }| INTO TABLE result.
+    ENDIF.
+
+    IF zif_package_json~is_valid_db( is_package_json-db ) = abap_false.
+      INSERT |Invalid database: { is_package_json-db }| INTO TABLE result.
+    ENDIF.
+
+    IF zif_package_json~is_valid_os( is_package_json-os ) = abap_false.
+      INSERT |Invalid operating system: { is_package_json-os }| INTO TABLE result.
     ENDIF.
 
     IF zif_package_json~is_valid_url( is_package_json-repository-url ) = abap_false.
@@ -450,10 +532,24 @@ CLASS zcl_package_json IMPLEMENTATION.
     ENDIF.
 
     CLEAR lt_values.
+    LOOP AT is_package_json-engines INTO ls_dependency.
+      COLLECT ls_dependency-name INTO lt_values.
+      IF zif_package_json~is_valid_engine( ls_dependency-name ) = abap_false.
+        INSERT |Invalid engine: { ls_dependency-name }| INTO TABLE result.
+      ENDIF.
+      IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
+        INSERT |Invalid engine version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
+      ENDIF.
+    ENDLOOP.
+    IF lines( is_package_json-engines ) <> lines( lt_values ).
+      INSERT |Duplicate engines| INTO TABLE result.
+    ENDIF.
+
+    CLEAR lt_values.
     LOOP AT is_package_json-dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        INSERT |Invalid dependency name: { ls_dependency-name }| INTO TABLE result.
+        INSERT |Invalid dependency: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
         INSERT |Invalid dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
@@ -467,7 +563,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     LOOP AT is_package_json-dev_dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        INSERT |Invalid dev dependency name: { ls_dependency-name }| INTO TABLE result.
+        INSERT |Invalid dev dependency: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
         INSERT |Invalid dev dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
@@ -485,7 +581,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     LOOP AT is_package_json-optional_dependencies INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        INSERT |Invalid opt dependency name: { ls_dependency-name }| INTO TABLE result.
+        INSERT |Invalid opt dependency: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
         INSERT |Invalid opt dependency version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.
@@ -507,7 +603,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     LOOP AT is_package_json-bundled_dependencies INTO lv_value.
       COLLECT lv_value INTO lt_values.
       IF zif_package_json~is_valid_name( lv_value ) = abap_false.
-        INSERT |Invalid bundled dependency name: { ls_dependency-name }| INTO TABLE result.
+        INSERT |Invalid bundled dependency: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       READ TABLE is_package_json-dependencies TRANSPORTING NO FIELDS WITH KEY name = ls_dependency-name.
       IF sy-subrc <> 0.
@@ -522,7 +618,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     LOOP AT is_package_json-engines INTO ls_dependency.
       COLLECT ls_dependency-name INTO lt_values.
       IF zif_package_json~is_valid_name( ls_dependency-name ) = abap_false.
-        INSERT |Invalid engine name: { ls_dependency-name }| INTO TABLE result.
+        INSERT |Invalid engine: { ls_dependency-name }| INTO TABLE result.
       ENDIF.
       IF zif_package_json~is_valid_version_range( ls_dependency-range ) = abap_false.
         INSERT |Invalid engine version: { ls_dependency-name } { ls_dependency-range }| INTO TABLE result.

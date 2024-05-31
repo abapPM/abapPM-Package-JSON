@@ -309,7 +309,7 @@ CLASS zcl_package_json_setup IMPLEMENTATION.
       <ls_objsl> TYPE objsl,
       <ls_objm>  TYPE objm.
 
-    ls_objh-objectname = zif_package_json=>c_obj_type.
+    ls_objh-objectname = zcl_package_json_db=>c_zapm.
     ls_objh-objecttype = 'L'.
     ls_objh-objcateg   = 'APPL'.
     ls_objh-checkid    = 'L'.
@@ -318,19 +318,19 @@ CLASS zcl_package_json_setup IMPLEMENTATION.
     ls_objh-objcharset = '1'.
 
     ls_objt-language   = zcl_package_json_db=>c_english.
-    ls_objt-objectname = zif_package_json=>c_obj_type.
+    ls_objt-objectname = zcl_package_json_db=>c_zapm.
     ls_objt-objecttype = 'L'.
     ls_objt-ddtext     = 'apm'.
 
     APPEND INITIAL LINE TO lt_objs ASSIGNING <ls_objs>.
-    <ls_objs>-objectname = zif_package_json=>c_obj_type.
+    <ls_objs>-objectname = zcl_package_json_db=>c_zapm.
     <ls_objs>-objecttype = 'L'.
     <ls_objs>-tabname    = zcl_package_json_db=>c_tabname.
     <ls_objs>-ddic       = abap_true.
     <ls_objs>-prim_table = abap_true.
 
     APPEND INITIAL LINE TO lt_objsl ASSIGNING <ls_objsl>.
-    <ls_objsl>-objectname = zif_package_json=>c_obj_type.
+    <ls_objsl>-objectname = zcl_package_json_db=>c_zapm.
     <ls_objsl>-objecttype = 'L'.
     <ls_objsl>-trwcount   = '01'.
     <ls_objsl>-tpgmid     = 'R3TR'.
@@ -392,7 +392,7 @@ CLASS zcl_package_json_setup IMPLEMENTATION.
     DATA lv_objectname TYPE objh-objectname.
 
     SELECT SINGLE objectname FROM objh INTO lv_objectname
-      WHERE objectname = zif_package_json=>c_obj_type AND objecttype = 'L'.
+      WHERE objectname = zcl_package_json_db=>c_zapm AND objecttype = 'L'.
     result = boolc( sy-subrc = 0 ).
 
   ENDMETHOD.

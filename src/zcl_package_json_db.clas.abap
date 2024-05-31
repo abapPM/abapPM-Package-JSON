@@ -23,10 +23,14 @@ CLASS zcl_package_json_db DEFINITION
       END OF ty_abappm.
 
     CONSTANTS:
-      c_devclass TYPE c LENGTH 30 VALUE '$TMP',
-      c_tabname  TYPE c LENGTH 30 VALUE 'ZABAPPM',
-      c_lock     TYPE c LENGTH 30 VALUE 'EZABAPPM',
-      c_english  TYPE c LENGTH 1 VALUE 'E'.
+      c_zapm TYPE tadir-object  VALUE 'ZAPM'.
+
+    CONSTANTS:
+      c_devclass    TYPE c LENGTH 30 VALUE '$TMP',
+      c_transaction TYPE c LENGTH 30 VALUE 'ZAPM',
+      c_tabname     TYPE c LENGTH 30 VALUE 'ZABAPPM',
+      c_lock        TYPE c LENGTH 30 VALUE 'EZABAPPM',
+      c_english     TYPE c LENGTH 1  VALUE 'E'.
 
     CONSTANTS:
       BEGIN OF c_type,
@@ -90,7 +94,7 @@ CLASS zcl_package_json_db IMPLEMENTATION.
     CALL FUNCTION 'RS_CORR_INSERT'
       EXPORTING
         object              = mv_package
-        object_class        = zif_package_json=>c_obj_type
+        object_class        = c_zapm
         devclass            = mv_package
         master_language     = 'E' " always English
         global_lock         = abap_true
@@ -168,7 +172,7 @@ CLASS zcl_package_json_db IMPLEMENTATION.
       EXPORTING
         wi_test_modus                  = abap_false
         wi_tadir_pgmid                 = 'R3TR'
-        wi_tadir_object                = zif_package_json=>c_obj_type
+        wi_tadir_object                = c_zapm
         wi_tadir_obj_name              = mv_package
         wi_tadir_devclass              = mv_package
       EXCEPTIONS

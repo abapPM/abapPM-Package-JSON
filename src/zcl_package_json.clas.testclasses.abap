@@ -21,7 +21,7 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
 
     METHODS test_compare
       IMPORTING
-        is_json TYPE zif_package_json=>ty_package_json
+        is_json TYPE zif_package_json_types=>ty_package_json
         iv_json TYPE string.
 
     METHODS:
@@ -157,8 +157,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       lv_json TYPE string,
-      ls_json TYPE zif_package_json=>ty_package_json,
-      ls_dep  TYPE zif_package_json=>ty_dependency.
+      ls_json TYPE zif_package_json_types=>ty_package_json,
+      ls_dep  TYPE zif_package_json_types=>ty_dependency.
 
     init_test( '$TEST' ).
 
@@ -222,7 +222,6 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |    "dep4": "^4.1.0"\n|
       && |  \},\n|
       && |  "bundledDependencies": [],\n|
-      && |  "packageManager": "",\n|
       && |  "engines": \{\n|
       && |    "abap": "7.5.0"\n|
       && |  \},\n|
@@ -231,8 +230,11 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  "db": [],\n|
       && |  "private": false,\n|
       && |  "dist": \{\n|
+      && |    "fileCount": 0,\n|
+      && |    "integrity": "",\n|
       && |    "shasum": "",\n|
-      && |    "tarball": ""\n|
+      && |    "tarball": "",\n|
+      && |    "uncompressedSize": 0\n|
       && |  \},\n|
       && |  "readme": ""\n|
       && |\}|.
@@ -245,7 +247,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD get_package.
 
-    DATA ls_json TYPE zif_package_json=>ty_package_json.
+    DATA ls_json TYPE zif_package_json_types=>ty_package_json.
 
     init_test( '$TEST,test,1.0.0' ).
 
@@ -282,7 +284,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD set_package.
 
-    DATA ls_json TYPE zif_package_json=>ty_package_json.
+    DATA ls_json TYPE zif_package_json_types=>ty_package_json.
 
     init_test( '$TEST' ).
 
@@ -336,8 +338,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       lv_json TYPE string,
-      ls_json TYPE zif_package_json=>ty_package_json,
-      ls_dep  TYPE zif_package_json=>ty_dependency.
+      ls_json TYPE zif_package_json_types=>ty_package_json,
+      ls_dep  TYPE zif_package_json_types=>ty_dependency.
 
     init_test( '$TEST' ).
 
@@ -377,8 +379,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       lv_json TYPE string,
-      ls_json TYPE zif_package_json=>ty_package_json,
-      ls_dep  TYPE zif_package_json=>ty_dependency.
+      ls_json TYPE zif_package_json_types=>ty_package_json,
+      ls_dep  TYPE zif_package_json_types=>ty_dependency.
 
     init_test( '$TEST' ).
 

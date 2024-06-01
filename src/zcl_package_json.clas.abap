@@ -6,7 +6,7 @@ CLASS zcl_package_json DEFINITION
 ************************************************************************
 * Package JSON
 *
-* Copyright (c) Marc Bernard <https://marcbernardtools.com/>
+* Copyright 2024 apm.to Inc. <https://apm.to>
 * SPDX-License-Identifier: MIT
 ************************************************************************
   PUBLIC SECTION.
@@ -48,13 +48,17 @@ CLASS zcl_package_json DEFINITION
       END OF ty_instance,
       ty_instances TYPE HASHED TABLE OF ty_instance WITH UNIQUE KEY package.
 
+    CONSTANTS:
+      c_package_json TYPE string VALUE 'PACKAGE_JSON'.
+
     CLASS-DATA:
       gt_instances TYPE ty_instances.
 
     DATA:
+      mv_key          TYPE zif_persist_apm=>ty_key,
       mv_package      TYPE devclass,
       ms_package_json TYPE zif_package_json_types=>ty_package_json,
-      mo_persist      TYPE REF TO zcl_package_json_db.
+      mi_persist      TYPE REF TO zif_persist_apm.
 
     CLASS-METHODS sort_dependencies
       IMPORTING
@@ -85,9 +89,9 @@ CLASS zcl_package_json IMPLEMENTATION.
     ms_package_json-version = iv_version.
     ms_package_json-private = iv_private.
 
-    CREATE OBJECT mo_persist
-      EXPORTING
-        iv_package = mv_package.
+    mv_key = |{ zif_persist_apm=>c_type-package }:{ mv_package }:{ c_package_json }|.
+
+    mi_persist = zcl_persist_apm=>factory( ).
 
   ENDMETHOD.
 
@@ -145,7 +149,15 @@ CLASS zcl_package_json IMPLEMENTATION.
 
 
   METHOD zif_package_json~delete.
-    mo_persist->delete( ).
+
+    DATA lx_error TYPE REF TO zcx_persist_apm.
+
+    TRY.
+        mi_persist->delete( mv_key ).
+      CATCH zcx_persist_apm INTO lx_error.
+        zcx_package_json=>raise_with_text( lx_error ).
+    ENDTRY.
+
   ENDMETHOD.
 
 
@@ -210,7 +222,9 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD zif_package_json~is_valid.
 
-    DATA lt_errors TYPE string_table.
+    DATA:
+      lt_errors TYPE string_table,
+      lx_error  TYPE REF TO zcx_persist_apm.
 
     TRY.
         lt_errors = zcl_package_json_valid=>check( ms_package_json ).
@@ -223,14 +237,37 @@ CLASS zcl_package_json IMPLEMENTATION.
 
 
   METHOD zif_package_json~load.
-    zif_package_json~set_json( mo_persist->load( )-data ).
+
+    DATA:
+      lv_value TYPE string,
+      lx_error TYPE REF TO zcx_persist_apm.
+
+    TRY.
+        lv_value = mi_persist->load( mv_key )-value.
+      CATCH zcx_persist_apm INTO lx_error.
+        zcx_package_json=>raise_with_text( lx_error ).
+    ENDTRY.
+
+    zif_package_json~set_json( lv_value ).
     result = me.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~save.
+
+    DATA lx_error TYPE REF TO zcx_persist_apm.
+
     zcl_package_json_valid=>check( ms_package_json ).
-    mo_persist->save(  zif_package_json~get_json( ) ).
+
+    TRY.
+        mi_persist->save(
+          iv_key   = mv_key
+          iv_value = zif_package_json~get_json( ) ).
+      CATCH zcx_persist_apm INTO lx_error.
+        zcx_package_json=>raise_with_text( lx_error ).
+    ENDTRY.
+
   ENDMETHOD.
 
 

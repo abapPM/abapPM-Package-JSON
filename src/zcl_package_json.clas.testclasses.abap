@@ -176,7 +176,10 @@ CLASS ltcl_package_json IMPLEMENTATION.
     ls_dep-range = '^4.1.0'.
     INSERT ls_dep INTO TABLE ls_json-optional_dependencies.
     ls_dep-name  = 'abap'.
-    ls_dep-range = '7.5.0'.
+    ls_dep-range = '>=7.50'.
+    INSERT ls_dep INTO TABLE ls_json-engines.
+    ls_dep-name  = 'apm'.
+    ls_dep-range = '>=1'.
     INSERT ls_dep INTO TABLE ls_json-engines.
 
     mi_package->set( ls_json ).
@@ -221,9 +224,10 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  "optionalDependencies": \{\n|
       && |    "dep4": "^4.1.0"\n|
       && |  \},\n|
-      && |  "bundledDependencies": [],\n|
+      && |  "bundleDependencies": [],\n|
       && |  "engines": \{\n|
-      && |    "abap": "7.5.0"\n|
+      && |    "abap": ">=7.50",\n|
+      && |    "apm": ">=1"\n|
       && |  \},\n|
       && |  "os": [],\n|
       && |  "cpu": [],\n|
@@ -233,8 +237,9 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |    "fileCount": 0,\n|
       && |    "integrity": "",\n|
       && |    "shasum": "",\n|
+      && |    "signatures": [],\n|
       && |    "tarball": "",\n|
-      && |    "uncompressedSize": 0\n|
+      && |    "unpackedSize": 0\n|
       && |  \},\n|
       && |  "readme": ""\n|
       && |\}|.

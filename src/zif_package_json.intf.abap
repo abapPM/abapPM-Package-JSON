@@ -15,6 +15,25 @@ INTERFACE zif_package_json PUBLIC.
 
   CONSTANTS c_version TYPE string VALUE '1.0.0' ##NEEDED.
 
+  TYPES:
+    BEGIN OF ty_package,
+      key            TYPE zif_persist_apm=>ty_key,
+      package        TYPE devclass,
+      name           TYPE string,
+      version        TYPE string,
+      private        TYPE abap_bool,
+      changed_by     TYPE as4user,
+      changed_at     TYPE string,
+      changed_at_raw TYPE timestampl,
+      BEGIN OF settings,
+        favorite        TYPE abap_bool,
+        write_protected TYPE abap_bool,
+        labels          TYPE string_table,
+      END OF settings,
+      instance       TYPE REF TO zif_package_json,
+    END OF ty_package,
+    ty_packages TYPE STANDARD TABLE OF ty_package WITH KEY package.
+
   METHODS get
     RETURNING
       VALUE(result) TYPE zif_package_json_types=>ty_package_json.

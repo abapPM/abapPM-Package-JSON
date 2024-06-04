@@ -47,6 +47,12 @@ CLASS zcl_package_json DEFINITION
       RETURNING
         VALUE(result)   TYPE zif_package_json=>ty_packages.
 
+    CLASS-METHODS get_package_key
+      IMPORTING
+        !iv_package   TYPE devclass
+      RETURNING
+        VALUE(result) TYPE zif_persist_apm=>ty_key.
+
     CLASS-METHODS get_package_from_key
       IMPORTING
         !iv_key       TYPE zif_persist_apm=>ty_key
@@ -104,7 +110,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     ms_package_json-version = iv_version.
     ms_package_json-private = iv_private.
 
-    mv_key = |{ zif_persist_apm=>c_key_type-package }:{ mv_package }:{ c_package_json }|.
+    mv_key = get_package_key( mv_package ).
 
     TRY.
         zif_package_json~load( ).
@@ -148,6 +154,11 @@ CLASS zcl_package_json IMPLEMENTATION.
     SPLIT iv_key AT ':' INTO lv_prefix result lv_suffix.
     result = to_upper( result ).
 
+  ENDMETHOD.
+
+
+  METHOD get_package_key.
+    result = |{ zif_persist_apm=>c_key_type-package }:{ iv_package }:{ c_package_json }|.
   ENDMETHOD.
 
 

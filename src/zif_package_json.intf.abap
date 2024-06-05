@@ -21,6 +21,7 @@ INTERFACE zif_package_json PUBLIC.
       package         TYPE devclass,
       name            TYPE string,
       version         TYPE string,
+      description     TYPE string,
       private         TYPE abap_bool,
       changed_by      TYPE as4user,
       changed_at      TYPE string,
@@ -57,6 +58,10 @@ INTERFACE zif_package_json PUBLIC.
       VALUE(result) TYPE REF TO zif_package_json
     RAISING
       zcx_package_json.
+
+  METHODS exists
+    RETURNING
+      VALUE(result) TYPE abap_bool.
 
   METHODS load
     RETURNING

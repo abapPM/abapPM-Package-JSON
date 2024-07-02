@@ -138,7 +138,6 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       lv_db IS INITIAL OR
-      lv_db = zif_package_json_types=>c_db-adabas_d OR
       lv_db = zif_package_json_types=>c_db-db2 OR
       lv_db = zif_package_json_types=>c_db-db400 OR
       lv_db = zif_package_json_types=>c_db-db6 OR

@@ -13,7 +13,7 @@ CLASS zcl_package_json_valid DEFINITION
 
     CLASS-METHODS check
       IMPORTING
-        !is_package_json TYPE zif_package_json_types=>ty_package_json
+        !is_manifest TYPE zif_package_json_types=>ty_manifest
       RETURNING
         VALUE(result)    TYPE string_table.
 
@@ -99,13 +99,13 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
   METHOD check.
 
-    APPEND LINES OF lcl_validate=>validate_single_values( is_package_json ) TO result.
+    APPEND LINES OF lcl_validate=>validate_single_values( is_manifest ) TO result.
 
-    APPEND LINES OF lcl_validate=>validate_arrays( is_package_json ) TO result.
+    APPEND LINES OF lcl_validate=>validate_arrays( is_manifest ) TO result.
 
-    APPEND LINES OF lcl_validate=>validate_persons( is_package_json ) TO result.
+    APPEND LINES OF lcl_validate=>validate_persons( is_manifest ) TO result.
 
-    APPEND LINES OF lcl_validate=>validate_dependencies( is_package_json ) TO result.
+    APPEND LINES OF lcl_validate=>validate_dependencies( is_manifest ) TO result.
 
   ENDMETHOD.
 

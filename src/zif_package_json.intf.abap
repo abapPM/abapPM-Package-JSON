@@ -41,7 +41,9 @@ INTERFACE zif_package_json PUBLIC.
     IMPORTING
       !iv_complete  TYPE abap_bool DEFAULT abap_false
     RETURNING
-      VALUE(result) TYPE string.
+      VALUE(result) TYPE string
+    RAISING
+      zcx_error.
 
   METHODS set
     IMPORTING

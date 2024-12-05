@@ -22,7 +22,9 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
     METHODS test_compare
       IMPORTING
         is_json TYPE zif_package_json_types=>ty_package_json
-        iv_json TYPE string.
+        iv_json TYPE string
+      RAISING
+        zcx_error.
 
     METHODS:
       valid_packages FOR TESTING,

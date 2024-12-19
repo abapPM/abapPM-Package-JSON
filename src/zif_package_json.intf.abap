@@ -10,6 +10,7 @@ INTERFACE zif_package_json PUBLIC.
 *
 * https://www.npmjs.com/package/@npmcli/package-json
 ************************************************************************
+
   CONSTANTS c_version TYPE string VALUE '1.0.0' ##NEEDED.
 
   INTERFACES zif_package_json_types.
@@ -39,7 +40,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS get_json
     IMPORTING
-      !iv_complete  TYPE abap_bool DEFAULT abap_false
+      !is_complete  TYPE abap_bool DEFAULT abap_false
     RETURNING
       VALUE(result) TYPE string
     RAISING
@@ -47,7 +48,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS set
     IMPORTING
-      !is_json      TYPE zif_package_json_types=>ty_package_json
+      !package_json TYPE zif_package_json_types=>ty_package_json
     RETURNING
       VALUE(result) TYPE REF TO zif_package_json
     RAISING
@@ -55,7 +56,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS set_json
     IMPORTING
-      !iv_json      TYPE string
+      !json         TYPE string
     RETURNING
       VALUE(result) TYPE REF TO zif_package_json
     RAISING

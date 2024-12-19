@@ -17,10 +17,10 @@ CLASS zcl_package_json DEFINITION
 
     CLASS-METHODS factory
       IMPORTING
-        !iv_package   TYPE devclass
-        !iv_name      TYPE string OPTIONAL
-        !iv_version   TYPE string OPTIONAL
-        !iv_private   TYPE abap_bool DEFAULT abap_false
+        !package      TYPE devclass
+        !name         TYPE string OPTIONAL
+        !version      TYPE string OPTIONAL
+        !private      TYPE abap_bool DEFAULT abap_false
       RETURNING
         VALUE(result) TYPE REF TO zif_package_json
       RAISING
@@ -28,40 +28,40 @@ CLASS zcl_package_json DEFINITION
 
     CLASS-METHODS injector
       IMPORTING
-        !iv_package TYPE devclass
-        !ii_mock    TYPE REF TO zif_package_json.
+        !package TYPE devclass
+        !mock    TYPE REF TO zif_package_json.
 
     METHODS constructor
       IMPORTING
-        !iv_package TYPE devclass
-        !iv_name    TYPE string OPTIONAL
-        !iv_version TYPE string OPTIONAL
-        !iv_private TYPE abap_bool DEFAULT abap_false
+        !package TYPE devclass
+        !name    TYPE string OPTIONAL
+        !version TYPE string OPTIONAL
+        !private TYPE abap_bool DEFAULT abap_false
       RAISING
         zcx_error.
 
     CLASS-METHODS list
       IMPORTING
-        !iv_filter      TYPE string OPTIONAL
-        !iv_instanciate TYPE abap_bool DEFAULT abap_false
+        !filter       TYPE string OPTIONAL
+        !instanciate  TYPE abap_bool DEFAULT abap_false
       RETURNING
-        VALUE(result)   TYPE zif_package_json=>ty_packages.
+        VALUE(result) TYPE zif_package_json=>ty_packages.
 
     CLASS-METHODS get_package_key
       IMPORTING
-        !iv_package   TYPE devclass
+        !package      TYPE devclass
       RETURNING
         VALUE(result) TYPE zif_persist_apm=>ty_key.
 
     CLASS-METHODS get_package_from_key
       IMPORTING
-        !iv_key       TYPE zif_persist_apm=>ty_key
+        !key          TYPE zif_persist_apm=>ty_key
       RETURNING
         VALUE(result) TYPE devclass.
 
     CLASS-METHODS convert_json_to_manifest
       IMPORTING
-        !iv_json      TYPE string
+        !json         TYPE string
       RETURNING
         VALUE(result) TYPE zif_package_json_types=>ty_manifest
       RAISING
@@ -69,9 +69,9 @@ CLASS zcl_package_json DEFINITION
 
     CLASS-METHODS convert_manifest_to_json
       IMPORTING
-        !is_manifest     TYPE zif_package_json_types=>ty_manifest
-        !iv_package_json TYPE abap_bool DEFAULT abap_false
-        !iv_complete     TYPE abap_bool DEFAULT abap_false
+        !manifest        TYPE zif_package_json_types=>ty_manifest
+        !is_package_json TYPE abap_bool DEFAULT abap_false
+        !is_complete     TYPE abap_bool DEFAULT abap_false
       RETURNING
         VALUE(result)    TYPE string
       RAISING
@@ -88,23 +88,23 @@ CLASS zcl_package_json DEFINITION
       ty_instances TYPE HASHED TABLE OF ty_instance WITH UNIQUE KEY package.
 
     CLASS-DATA:
-      gi_persist   TYPE REF TO zif_persist_apm,
-      gt_instances TYPE ty_instances.
+      db_persist TYPE REF TO zif_persist_apm,
+      instances  TYPE ty_instances.
 
     DATA:
-      mv_key      TYPE zif_persist_apm=>ty_key,
-      mv_package  TYPE devclass,
-      ms_manifest TYPE zif_package_json_types=>ty_manifest.
+      key      TYPE zif_persist_apm=>ty_key,
+      package  TYPE devclass,
+      manifest TYPE zif_package_json_types=>ty_manifest.
 
     CLASS-METHODS check_manifest
       IMPORTING
-        !is_manifest TYPE zif_package_json_types=>ty_manifest
+        !manifest TYPE zif_package_json_types=>ty_manifest
       RAISING
         zcx_error.
 
     CLASS-METHODS sort_manifest
       IMPORTING
-        !is_manifest  TYPE zif_package_json_types=>ty_manifest
+        !manifest     TYPE zif_package_json_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE zif_package_json_types=>ty_manifest.
 
@@ -117,34 +117,34 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD check_manifest.
 
-    DATA lt_issues TYPE string_table.
+    DATA(issues) = zcl_package_json_valid=>check( manifest ).
 
-    lt_issues = zcl_package_json_valid=>check( is_manifest ).
-
-    IF lt_issues IS NOT INITIAL.
-      zcx_error=>raise( |Invalid package json:\n{ concat_lines_of( table = lt_issues sep = |\n| ) }| ).
+    IF issues IS NOT INITIAL.
+      zcx_error=>raise( |Invalid package json:\n{ concat_lines_of( table = issues sep = |\n| ) }| ).
     ENDIF.
 
   ENDMETHOD.
 
 
   METHOD class_constructor.
-    gi_persist = zcl_persist_apm=>get_instance( ).
+
+    db_persist = zcl_persist_apm=>get_instance( ).
+
   ENDMETHOD.
 
 
   METHOD constructor.
 
-    IF zcl_package_json_valid=>is_valid_sap_package( iv_package ) = abap_false.
-      zcx_error=>raise( |Invalid package: { iv_package }| ).
+    IF zcl_package_json_valid=>is_valid_sap_package( package ) = abap_false.
+      zcx_error=>raise( |Invalid package: { package }| ).
     ENDIF.
 
-    mv_package          = iv_package.
-    ms_manifest-name    = iv_name.
-    ms_manifest-version = iv_version.
-    ms_manifest-private = iv_private.
+    me->package      = package.
+    manifest-name    = name.
+    manifest-version = version.
+    manifest-private = private.
 
-    mv_key = get_package_key( mv_package ).
+    key = get_package_key( package ).
 
     TRY.
         zif_package_json~load( ).
@@ -205,48 +205,46 @@ CLASS zcl_package_json IMPLEMENTATION.
       END OF ty_package_json_partial.
 
     DATA:
-      li_json         TYPE REF TO zif_ajson,
-      ls_json_partial TYPE ty_package_json_partial,
-      ls_dependency   TYPE zif_package_json_types=>ty_dependency,
-      ls_json         TYPE zif_package_json_types=>ty_manifest,
-      ls_package_json TYPE zif_package_json_types=>ty_package_json,
-      lt_issues       TYPE string_table,
-      lx_error        TYPE REF TO zcx_ajson_error.
+      json_partial TYPE ty_package_json_partial,
+      dependency   TYPE zif_package_json_types=>ty_dependency,
+      manifest     TYPE zif_package_json_types=>ty_manifest,
+      package_json TYPE zif_package_json_types=>ty_package_json.
 
     TRY.
-        li_json = zcl_ajson=>parse( iv_json ).
-        li_json->to_abap(
+        DATA(ajson) = zcl_ajson=>parse( json ).
+
+        ajson->to_abap(
           EXPORTING
             iv_corresponding = abap_true
           IMPORTING
-            ev_container     = ls_json_partial ).
+            ev_container     = json_partial ).
 
-        MOVE-CORRESPONDING ls_json_partial TO ls_json.
+        MOVE-CORRESPONDING json_partial TO manifest.
 
         " Transpose dependencies
-        LOOP AT li_json->members( '/dependencies' ) INTO ls_dependency-name.
-          ls_dependency-range = li_json->get( '/dependencies/' && ls_dependency-name ).
-          INSERT ls_dependency INTO TABLE ls_json-dependencies.
+        LOOP AT ajson->members( '/dependencies' ) INTO dependency-name.
+          dependency-range = ajson->get( '/dependencies/' && dependency-name ).
+          INSERT dependency INTO TABLE manifest-dependencies.
         ENDLOOP.
-        LOOP AT li_json->members( '/devDependencies' ) INTO ls_dependency-name.
-          ls_dependency-range = li_json->get( '/devDependencies/' && ls_dependency-name ).
-          INSERT ls_dependency INTO TABLE ls_json-dev_dependencies.
+        LOOP AT ajson->members( '/devDependencies' ) INTO dependency-name.
+          dependency-range = ajson->get( '/devDependencies/' && dependency-name ).
+          INSERT dependency INTO TABLE manifest-dev_dependencies.
         ENDLOOP.
-        LOOP AT li_json->members( '/optDependencies' ) INTO ls_dependency-name.
-          ls_dependency-range = li_json->get( '/optDependencies/' && ls_dependency-name ).
-          INSERT ls_dependency INTO TABLE ls_json-optional_dependencies.
+        LOOP AT ajson->members( '/optDependencies' ) INTO dependency-name.
+          dependency-range = ajson->get( '/optDependencies/' && dependency-name ).
+          INSERT dependency INTO TABLE manifest-optional_dependencies.
         ENDLOOP.
-        LOOP AT li_json->members( '/engines' ) INTO ls_dependency-name.
-          ls_dependency-range = li_json->get( '/engines/' && ls_dependency-name ).
-          INSERT ls_dependency INTO TABLE ls_json-engines.
+        LOOP AT ajson->members( '/engines' ) INTO dependency-name.
+          dependency-range = ajson->get( '/engines/' && dependency-name ).
+          INSERT dependency INTO TABLE manifest-engines.
         ENDLOOP.
 
-        check_manifest( ls_json ).
+        check_manifest( manifest ).
 
-        result = sort_manifest( ls_json ).
+        result = sort_manifest( manifest ).
 
-      CATCH zcx_ajson_error INTO lx_error.
-        zcx_error=>raise_with_text( lx_error ).
+      CATCH zcx_ajson_error INTO DATA(error).
+        zcx_error=>raise_with_text( error ).
     ENDTRY.
 
   ENDMETHOD.
@@ -254,63 +252,58 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD convert_manifest_to_json.
 
-    DATA:
-      li_json       TYPE REF TO zif_ajson,
-      ls_dependency TYPE zif_package_json_types=>ty_dependency,
-      lx_error      TYPE REF TO zcx_ajson_error.
-
     TRY.
-        li_json = zcl_ajson=>new( )->keep_item_order( )->set(
+        DATA(ajson) = zcl_ajson=>new( )->keep_item_order( )->set(
           iv_path = '/'
-          iv_val  = is_manifest ).
+          iv_val  = manifest ).
 
-        li_json = li_json->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
+        ajson = ajson->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
 
         " Transpose dependencies
-        li_json->setx( '/dependencies:{ }' ).
-        LOOP AT is_manifest-dependencies INTO ls_dependency.
-          li_json->set(
-            iv_path = '/dependencies/' && ls_dependency-name
-            iv_val  = ls_dependency-range ).
+        ajson->setx( '/dependencies:{ }' ).
+        LOOP AT manifest-dependencies INTO DATA(dependency).
+          ajson->set(
+            iv_path = '/dependencies/' && dependency-name
+            iv_val  = dependency-range ).
         ENDLOOP.
 
-        li_json->setx( '/devDependencies:{ }' ).
-        LOOP AT is_manifest-dev_dependencies INTO ls_dependency.
-          li_json->set(
-            iv_path = '/devDependencies/' && ls_dependency-name
-            iv_val  = ls_dependency-range ).
+        ajson->setx( '/devDependencies:{ }' ).
+        LOOP AT manifest-dev_dependencies INTO dependency.
+          ajson->set(
+            iv_path = '/devDependencies/' && dependency-name
+            iv_val  = dependency-range ).
         ENDLOOP.
 
-        li_json->setx( '/optionalDependencies:{ }' ).
-        LOOP AT is_manifest-optional_dependencies INTO ls_dependency.
-          li_json->set(
-            iv_path = '/optionalDependencies/' && ls_dependency-name
-            iv_val  = ls_dependency-range ).
+        ajson->setx( '/optionalDependencies:{ }' ).
+        LOOP AT manifest-optional_dependencies INTO dependency.
+          ajson->set(
+            iv_path = '/optionalDependencies/' && dependency-name
+            iv_val  = dependency-range ).
         ENDLOOP.
 
-        li_json->setx( '/engines:{ }' ).
-        LOOP AT is_manifest-engines INTO ls_dependency.
-          li_json->set(
-            iv_path = '/engines/' && ls_dependency-name
-            iv_val  = ls_dependency-range ).
+        ajson->setx( '/engines:{ }' ).
+        LOOP AT manifest-engines INTO dependency.
+          ajson->set(
+            iv_path = '/engines/' && dependency-name
+            iv_val  = dependency-range ).
         ENDLOOP.
 
-        IF iv_complete = abap_false.
-          li_json = li_json->filter( lcl_ajson_filters=>create_empty_filter( ) ).
-          IF is_manifest-private = abap_false.
-            li_json = li_json->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = '/private' ) ).
+        IF is_complete = abap_false.
+          ajson = ajson->filter( lcl_ajson_filters=>create_empty_filter( ) ).
+          IF manifest-private = abap_false.
+            ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = '/private' ) ).
           ENDIF.
         ENDIF.
 
-        IF iv_package_json = abap_true.
+        IF is_package_json = abap_true.
           " Remove the manifest fields that are not in package.json
-          li_json = li_json->filter( zcl_ajson_filter_lib=>create_path_filter(
+          ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter(
             iv_skip_paths = '/dist,/deprecated,/_id,/_abapVersion,/_apmVersion' ) ).
         ENDIF.
 
-        result = li_json->stringify( 2 ).
-      CATCH zcx_ajson_error INTO lx_error.
-        zcx_error=>raise_with_text( lx_error ).
+        result = ajson->stringify( 2 ).
+      CATCH zcx_ajson_error INTO DATA(error).
+        zcx_error=>raise_with_text( error ).
     ENDTRY.
 
   ENDMETHOD.
@@ -318,24 +311,22 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD factory.
 
-    DATA ls_instance TYPE ty_instance.
-
-    FIELD-SYMBOLS <ls_instance> TYPE ty_instance.
-
-    READ TABLE gt_instances ASSIGNING <ls_instance> WITH TABLE KEY package = iv_package.
+    READ TABLE instances ASSIGNING FIELD-SYMBOL(<instance>)
+      WITH TABLE KEY package = package.
     IF sy-subrc = 0.
-      result = <ls_instance>-instance.
+      result = <instance>-instance.
     ELSE.
       CREATE OBJECT result TYPE zcl_package_json
         EXPORTING
-          iv_package = iv_package
-          iv_name    = iv_name
-          iv_version = iv_version
-          iv_private = iv_private.
+          package = package
+          name    = name
+          version = version
+          private = private.
 
-      ls_instance-package  = iv_package.
-      ls_instance-instance = result.
-      INSERT ls_instance INTO TABLE gt_instances.
+      DATA(instance) = VALUE ty_instance(
+        package  = package
+        instance = result ).
+      INSERT instance INTO TABLE instances.
     ENDIF.
 
   ENDMETHOD.
@@ -343,34 +334,29 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD get_package_from_key.
 
-    DATA:
-      lv_prefix TYPE string,
-      lv_suffix TYPE string.
-
-    SPLIT iv_key AT ':' INTO lv_prefix result lv_suffix.
+    SPLIT key AT ':' INTO DATA(prefix) result DATA(suffix).
     result = to_upper( result ).
 
   ENDMETHOD.
 
 
   METHOD get_package_key.
-    result = |{ zif_persist_apm=>c_key_type-package }:{ iv_package }:{ zif_persist_apm=>c_key_extra-package_json }|.
+
+    result = |{ zif_persist_apm=>c_key_type-package }:{ package }:{ zif_persist_apm=>c_key_extra-package_json }|.
+
   ENDMETHOD.
 
 
   METHOD injector.
 
-    DATA ls_instance TYPE ty_instance.
-
-    FIELD-SYMBOLS <ls_instance> TYPE ty_instance.
-
-    READ TABLE gt_instances ASSIGNING <ls_instance> WITH TABLE KEY package = iv_package.
+    READ TABLE instances ASSIGNING FIELD-SYMBOL(<instance>) WITH TABLE KEY package = package.
     IF sy-subrc = 0.
-      <ls_instance>-instance = ii_mock.
+      <instance>-instance = mock.
     ELSE.
-      ls_instance-package  = iv_package.
-      ls_instance-instance = ii_mock.
-      INSERT ls_instance INTO TABLE gt_instances.
+      DATA(instance) = VALUE ty_instance(
+        package  = package
+        instance = mock ).
+      INSERT instance INTO TABLE instances.
     ENDIF.
 
   ENDMETHOD.
@@ -378,111 +364,125 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD list.
 
-    DATA:
-      lt_list   TYPE zif_persist_apm=>ty_list,
-      ls_result LIKE LINE OF result.
-
-    FIELD-SYMBOLS <ls_list> LIKE LINE OF lt_list.
-
-    lt_list = gi_persist->list( zif_persist_apm=>c_key_type-package && |:{ iv_filter }%:|
+    DATA(list) = db_persist->list( zif_persist_apm=>c_key_type-package && |:{ filter }%:|
       && zif_persist_apm=>c_key_extra-package_json ).
 
-    LOOP AT lt_list ASSIGNING <ls_list>.
-      CLEAR ls_result.
-      ls_result-key            = <ls_list>-keys.
-      ls_result-package        = get_package_from_key( <ls_list>-keys ).
-      ls_result-changed_by     = <ls_list>-user.
-      ls_result-changed_at_raw = <ls_list>-timestamp.
-      ls_result-changed_at     = zcl_abapgit_gui_chunk_lib=>render_timestamp( <ls_list>-timestamp ).
+    LOOP AT list ASSIGNING FIELD-SYMBOL(<list>).
+      DATA(result_item) = VALUE zif_package_json=>ty_package(
+        key            = <list>-keys
+        package        = get_package_from_key( <list>-keys )
+        changed_by     = <list>-user
+        changed_at_raw = <list>-timestamp
+        changed_at     = zcl_abapgit_gui_chunk_lib=>render_timestamp( <list>-timestamp ) ).
 
-      IF iv_instanciate = abap_true.
+      IF instanciate = abap_true.
         TRY.
-            ls_result-instance    = factory( ls_result-package )->load( ).
-            ls_result-name        = ls_result-instance->get( )-name.
-            ls_result-version     = ls_result-instance->get( )-version.
-            ls_result-description = ls_result-instance->get( )-description.
-            ls_result-type        = ls_result-instance->get( )-type.
-            ls_result-private     = ls_result-instance->get( )-private.
+            result_item-instance    = factory( result_item-package )->load( ).
+            result_item-name        = result_item-instance->get( )-name.
+            result_item-version     = result_item-instance->get( )-version.
+            result_item-description = result_item-instance->get( )-description.
+            result_item-type        = result_item-instance->get( )-type.
+            result_item-private     = result_item-instance->get( )-private.
           CATCH zcx_error ##NO_HANDLER.
         ENDTRY.
       ENDIF.
 
-      INSERT ls_result INTO TABLE result.
+      INSERT result_item INTO TABLE result.
     ENDLOOP.
 
   ENDMETHOD.
 
 
   METHOD sort_manifest.
-    result = is_manifest.
+
+    result = manifest.
     SORT result-dependencies BY name.
     SORT result-dev_dependencies BY name.
     SORT result-optional_dependencies BY name.
     SORT result-engines BY name.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~delete.
-    gi_persist->delete( mv_key ).
+
+    db_persist->delete( key ).
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~exists.
+
     TRY.
-        gi_persist->load( mv_key ).
+        db_persist->load( key ).
         result = abap_true.
       CATCH zcx_error.
         result = abap_false.
     ENDTRY.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~get.
-    MOVE-CORRESPONDING ms_manifest TO result.
+
+    MOVE-CORRESPONDING manifest TO result.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~get_json.
+
     result = convert_manifest_to_json(
-      is_manifest     = ms_manifest
-      iv_package_json = abap_true
-      iv_complete     = iv_complete ).
+      manifest        = manifest
+      is_package_json = abap_true
+      is_complete     = is_complete ).
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~is_valid.
+
     TRY.
-        result = boolc( zcl_package_json_valid=>check( ms_manifest ) IS INITIAL ).
+        result = boolc( zcl_package_json_valid=>check( manifest ) IS INITIAL ).
       CATCH zcx_error.
         result = abap_false.
     ENDTRY.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~load.
-    zif_package_json~set_json( gi_persist->load( mv_key )-value ).
+
+    zif_package_json~set_json( db_persist->load( key )-value ).
     result = me.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~save.
-    check_manifest( ms_manifest ).
-    gi_persist->save(
-      iv_key   = mv_key
-      iv_value = zif_package_json~get_json( ) ).
+
+    check_manifest( manifest ).
+    db_persist->save(
+      key   = key
+      value = zif_package_json~get_json( ) ).
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~set.
-    MOVE-CORRESPONDING is_json TO ms_manifest.
-    check_manifest( ms_manifest ).
-    ms_manifest = sort_manifest( ms_manifest ).
-    result = me.
+
+    MOVE-CORRESPONDING package_json TO manifest.
+    check_manifest( manifest ).
+    manifest = sort_manifest( manifest ).
+    result   = me.
+
   ENDMETHOD.
 
 
   METHOD zif_package_json~set_json.
-    ms_manifest = convert_json_to_manifest( iv_json ).
-    result = me.
+
+    manifest = convert_json_to_manifest( json ).
+    result   = me.
+
   ENDMETHOD.
 ENDCLASS.

@@ -32,7 +32,10 @@ INTERFACE zif_package_json PUBLIC.
       labels          TYPE string_table, " settings
       instance        TYPE REF TO zif_package_json,
     END OF ty_package,
-    ty_packages TYPE STANDARD TABLE OF ty_package WITH KEY package.
+    ty_packages TYPE STANDARD TABLE OF ty_package
+      WITH NON-UNIQUE KEY primary_key COMPONENTS key
+      WITH UNIQUE HASHED KEY package COMPONENTS package
+      WITH NON-UNIQUE SORTED KEY name COMPONENTS name.
 
   METHODS get
     RETURNING

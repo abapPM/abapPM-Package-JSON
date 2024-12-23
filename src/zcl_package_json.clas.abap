@@ -234,7 +234,9 @@ CLASS zcl_package_json IMPLEMENTATION.
           INSERT dependency INTO TABLE manifest-peer_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/bundleDependencies' ) INTO dependency-name.
-          INSERT dependency-name INTO TABLE manifest-bundle_dependencies.
+          dependency-range = ajson->get( '/bundleDependencies/' && dependency-name ).
+          " store just the range, which is the name of the bundle dependency
+          INSERT dependency-range INTO TABLE manifest-bundle_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/engines' ) INTO dependency-name.
           dependency-range = ajson->get( '/engines/' && dependency-name ).

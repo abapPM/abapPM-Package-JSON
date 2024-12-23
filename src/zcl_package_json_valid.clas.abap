@@ -88,6 +88,7 @@ CLASS zcl_package_json_valid DEFINITION
         !db           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.

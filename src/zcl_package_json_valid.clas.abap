@@ -13,7 +13,7 @@ CLASS zcl_package_json_valid DEFINITION
 
     CLASS-METHODS check
       IMPORTING
-        !manifest     TYPE zif_package_json_types=>ty_manifest
+        !manifest     TYPE zif_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
@@ -88,7 +88,6 @@ CLASS zcl_package_json_valid DEFINITION
         !db           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -126,9 +125,9 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       cpu_val IS INITIAL OR
-      cpu_val = zif_package_json_types=>c_cpu-x86_64 OR
-      cpu_val = zif_package_json_types=>c_cpu-power_pc OR
-      cpu_val = zif_package_json_types=>c_cpu-sparc ).
+      cpu_val = zif_types=>c_cpu-x86_64 OR
+      cpu_val = zif_types=>c_cpu-power_pc OR
+      cpu_val = zif_types=>c_cpu-sparc ).
 
   ENDMETHOD.
 
@@ -141,15 +140,15 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       db_val IS INITIAL OR
-      db_val = zif_package_json_types=>c_db-db2 OR
-      db_val = zif_package_json_types=>c_db-db400 OR
-      db_val = zif_package_json_types=>c_db-db6 OR
-      db_val = zif_package_json_types=>c_db-hdb OR
-      db_val = zif_package_json_types=>c_db-informix OR
-      db_val = zif_package_json_types=>c_db-mssql OR
-      db_val = zif_package_json_types=>c_db-oracle OR
-      db_val = zif_package_json_types=>c_db-sap_db OR
-      db_val = zif_package_json_types=>c_db-sybase ).
+      db_val = zif_types=>c_db-db2 OR
+      db_val = zif_types=>c_db-db400 OR
+      db_val = zif_types=>c_db-db6 OR
+      db_val = zif_types=>c_db-hdb OR
+      db_val = zif_types=>c_db-informix OR
+      db_val = zif_types=>c_db-mssql OR
+      db_val = zif_types=>c_db-oracle OR
+      db_val = zif_types=>c_db-sap_db OR
+      db_val = zif_types=>c_db-sybase ).
 
   ENDMETHOD.
 
@@ -174,8 +173,8 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       engine IS INITIAL OR
-      engine = zif_package_json_types=>c_engine-abap OR
-      engine = zif_package_json_types=>c_engine-apm ).
+      engine = zif_types=>c_engine-abap OR
+      engine = zif_types=>c_engine-apm ).
 
   ENDMETHOD.
 
@@ -184,10 +183,10 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     " https://www.npmjs.com/package/validate-npm-package-name
     IF strlen( name )
-      BETWEEN zif_package_json_types=>c_package_name-min_length
-          AND zif_package_json_types=>c_package_name-max_length.
+      BETWEEN zif_types=>c_package_name-min_length
+          AND zif_types=>c_package_name-max_length.
 
-      FIND REGEX zif_package_json_types=>c_package_name-regex IN name RESPECTING CASE.
+      FIND REGEX zif_types=>c_package_name-regex IN name RESPECTING CASE.
       result = boolc( sy-subrc =  0 ).
     ELSE.
       result = abap_false.
@@ -204,13 +203,13 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       os_val IS INITIAL OR
-      os_val = zif_package_json_types=>c_os-aix OR
-      os_val = zif_package_json_types=>c_os-hp_ux OR
-      os_val = zif_package_json_types=>c_os-linux OR
-      os_val = zif_package_json_types=>c_os-ms_windows OR
-      os_val = zif_package_json_types=>c_os-os_390 OR
-      os_val = zif_package_json_types=>c_os-os_400 OR
-      os_val = zif_package_json_types=>c_os-solaris ).
+      os_val = zif_types=>c_os-aix OR
+      os_val = zif_types=>c_os-hp_ux OR
+      os_val = zif_types=>c_os-linux OR
+      os_val = zif_types=>c_os-ms_windows OR
+      os_val = zif_types=>c_os-os_390 OR
+      os_val = zif_types=>c_os-os_400 OR
+      os_val = zif_types=>c_os-solaris ).
 
   ENDMETHOD.
 
@@ -219,8 +218,8 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = boolc(
       type IS INITIAL OR
-      type = zif_package_json_types=>c_package_type-common_abap OR
-      type = zif_package_json_types=>c_package_type-module ).
+      type = zif_types=>c_package_type-common_abap OR
+      type = zif_types=>c_package_type-module ).
 
   ENDMETHOD.
 

@@ -21,7 +21,7 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
 
     METHODS test_compare
       IMPORTING
-        package_json TYPE zif_package_json_types=>ty_package_json
+        package_json TYPE zif_types=>ty_package_json
         json_data    TYPE string
       RAISING
         zcx_error.
@@ -51,10 +51,10 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     CREATE OBJECT cut TYPE zcl_package_json
       EXPORTING
-        package = |{ package }|
+        package = CONV devclass( package )
         name    = name
         version = version
-        private = |{ private }|.
+        private = CONV abap_bool( private ).
 
   ENDMETHOD.
 
@@ -65,13 +65,14 @@ CLASS ltcl_package_json IMPLEMENTATION.
         IF cut->is_valid( ) = abap_false.
           cl_abap_unit_assert=>fail( |Invalid but expected valid: { args }| ).
         ENDIF.
-      CATCH zcx_error INTO data(error).
+      CATCH zcx_error INTO DATA(error).
         cl_abap_unit_assert=>fail( error->get_text( ) ).
     ENDTRY.
 
   ENDMETHOD.
 
   METHOD test_invalid.
+
     TRY.
         init_test( args ).
         IF cut->is_valid( ) = abap_true.
@@ -79,6 +80,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
         ENDIF.
       CATCH zcx_error.
     ENDTRY.
+
   ENDMETHOD.
 
   METHOD test_compare.
@@ -151,14 +153,17 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       json         TYPE string,
-      package_json TYPE zif_package_json_types=>ty_package_json,
-      dependency   TYPE zif_package_json_types=>ty_dependency.
+      package_json TYPE zif_types=>ty_package_json,
+      dependency   TYPE zif_types=>ty_dependency.
 
     init_test( '$TEST' ).
 
     CLEAR package_json.
-    package_json-name    = 'test'.
-    package_json-version = '1.0.0'.
+    package_json-name         = 'test'.
+    package_json-version      = '1.0.0'.
+    package_json-author-name  = 'Marc'.
+    package_json-author-email = 'marc@test.com'.
+    package_json-private      = abap_true.
 
     dependency-name  = 'dep2'.
     dependency-range = '2.0.0'.
@@ -169,6 +174,10 @@ CLASS ltcl_package_json IMPLEMENTATION.
     dependency-name  = 'dep4'.
     dependency-range = '^4.1.0'.
     INSERT dependency INTO TABLE package_json-optional_dependencies.
+    dependency-name  = 'dep5'.
+    dependency-range = '^5.0.1'.
+    INSERT dependency INTO TABLE package_json-peer_dependencies.
+    INSERT `dep2` INTO TABLE package_json-bundle_dependencies.
     dependency-name  = 'abap'.
     dependency-range = '>=7.50'.
     INSERT dependency INTO TABLE package_json-engines.
@@ -190,9 +199,9 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  \},\n|
       && |  "license": "",\n|
       && |  "author": \{\n|
-      && |    "name": "",\n|
+      && |    "name": "Marc",\n|
       && |    "url": "",\n|
-      && |    "email": "",\n|
+      && |    "email": "marc@test.com",\n|
       && |    "avatar": ""\n|
       && |  \},\n|
       && |  "contributors": [],\n|
@@ -218,7 +227,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  "optionalDependencies": \{\n|
       && |    "dep4": "^4.1.0"\n|
       && |  \},\n|
-      && |  "bundleDependencies": [],\n|
+      && |  "peerDependencies": \{\n|
+      && |    "dep5": "^5.0.1"\n|
+      && |  \},\n|
+      && |  "bundleDependencies": [\n|
+      && |    "dep2"\n|
+      && |  ],\n|
       && |  "engines": \{\n|
       && |    "abap": ">=7.50",\n|
       && |    "apm": ">=1"\n|
@@ -226,7 +240,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && |  "os": [],\n|
       && |  "cpu": [],\n|
       && |  "db": [],\n|
-      && |  "private": false,\n|
+      && |  "private": true,\n|
       && |  "readme": ""\n|
       && |\}|.
 
@@ -238,7 +252,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD get_package.
 
-    DATA package_json TYPE zif_package_json_types=>ty_package_json.
+    DATA package_json TYPE zif_types=>ty_package_json.
 
     init_test( '$TEST,test,1.0.0' ).
 
@@ -248,7 +262,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "test", "version": "1.0.0"}' ).
+      json_data    = '{ "name": "test", "version": "1.0.0"}' ).
 
     init_test( '$TEST,test,1.0.0,X' ).
 
@@ -259,7 +273,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "test", "version": "1.0.0", "private": true}' ).
+      json_data    = '{ "name": "test", "version": "1.0.0", "private": true}' ).
 
     init_test( '/TEST/TEST,@test/test,1.2.3' ).
 
@@ -269,13 +283,13 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "@test/test", "version": "1.2.3"}' ).
+      json_data    = '{ "name": "@test/test", "version": "1.2.3"}' ).
 
   ENDMETHOD.
 
   METHOD set_package.
 
-    DATA package_json TYPE zif_package_json_types=>ty_package_json.
+    DATA package_json TYPE zif_types=>ty_package_json.
 
     init_test( '$TEST' ).
 
@@ -288,7 +302,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "test", "version": "1.0.0", "private": true}' ).
+      json_data    = '{ "name": "test", "version": "1.0.0", "private": true}' ).
 
     init_test( '$TEST' ).
 
@@ -301,7 +315,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "test", "version": "1.0.0", "description": "My package test"}' ).
+      json_data    = '{ "name": "test", "version": "1.0.0", "description": "My package test"}' ).
 
     init_test( '$TEST' ).
 
@@ -313,7 +327,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_compare(
       package_json = package_json
-      json_data = '{ "name": "test-2", "version": "1.2.3"}' ).
+      json_data    = '{ "name": "test-2", "version": "1.2.3"}' ).
 
   ENDMETHOD.
 
@@ -329,15 +343,15 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       json         TYPE string,
-      package_json TYPE zif_package_json_types=>ty_package_json,
-      dependency   TYPE zif_package_json_types=>ty_dependency.
+      package_json TYPE zif_types=>ty_package_json,
+      dependency   TYPE zif_types=>ty_dependency.
 
     init_test( '$TEST' ).
 
     json = |\{\n|
       && |  "name": "test",\n|
       && |  "version": "1.0.0",\n|
-      && |  "dependencies": \{\n|
+      && |  "devDependencies": \{\n|
       && |    "dep1": "2.0.0",\n|
       && |    "dep2": ">3",\n|
       && |    "dep3": "^4.1.0"\n|
@@ -352,13 +366,13 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     dependency-name  = 'dep1'.
     dependency-range = '2.0.0'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
     dependency-name  = 'dep2'.
     dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
     dependency-name  = 'dep3'.
     dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
 
     cl_abap_unit_assert=>assert_equals(
       act = cut->get( )
@@ -370,8 +384,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA:
       json         TYPE string,
-      package_json TYPE zif_package_json_types=>ty_package_json,
-      dependency   TYPE zif_package_json_types=>ty_dependency.
+      package_json TYPE zif_types=>ty_package_json,
+      dependency   TYPE zif_types=>ty_dependency.
 
     init_test( '$TEST' ).
 
@@ -381,20 +395,20 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     dependency-name  = 'dep1'.
     dependency-range = '2.0.0'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
     dependency-name  = 'dep2'.
     dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
     dependency-name  = 'dep3'.
     dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-dependencies.
+    INSERT dependency INTO TABLE package_json-dev_dependencies.
 
     cut->set( package_json ).
 
     json = |\{\n|
       && |  "name": "test",\n|
       && |  "version": "1.0.0",\n|
-      && |  "dependencies": \{\n|
+      && |  "devDependencies": \{\n|
       && |    "dep1": "2.0.0",\n|
       && |    "dep2": ">3",\n|
       && |    "dep3": "^4.1.0"\n|

@@ -13,7 +13,7 @@ INTERFACE zif_package_json PUBLIC.
 
   CONSTANTS c_version TYPE string VALUE '1.0.0' ##NEEDED.
 
-  INTERFACES zif_package_json_types.
+  INTERFACES zif_types.
 
   TYPES:
     BEGIN OF ty_package,
@@ -36,7 +36,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS get
     RETURNING
-      VALUE(result) TYPE zif_package_json_types=>ty_package_json.
+      VALUE(result) TYPE zif_types=>ty_package_json.
 
   METHODS get_json
     IMPORTING
@@ -48,7 +48,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS set
     IMPORTING
-      !package_json TYPE zif_package_json_types=>ty_package_json
+      !package_json TYPE zif_types=>ty_package_json
     RETURNING
       VALUE(result) TYPE REF TO zif_package_json
     RAISING

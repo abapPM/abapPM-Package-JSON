@@ -63,13 +63,13 @@ CLASS zcl_package_json DEFINITION
       IMPORTING
         !json         TYPE string
       RETURNING
-        VALUE(result) TYPE zif_package_json_types=>ty_manifest
+        VALUE(result) TYPE zif_types=>ty_manifest
       RAISING
         zcx_error.
 
     CLASS-METHODS convert_manifest_to_json
       IMPORTING
-        !manifest        TYPE zif_package_json_types=>ty_manifest
+        !manifest        TYPE zif_types=>ty_manifest
         !is_package_json TYPE abap_bool DEFAULT abap_false
         !is_complete     TYPE abap_bool DEFAULT abap_false
       RETURNING
@@ -94,19 +94,19 @@ CLASS zcl_package_json DEFINITION
     DATA:
       key      TYPE zif_persist_apm=>ty_key,
       package  TYPE devclass,
-      manifest TYPE zif_package_json_types=>ty_manifest.
+      manifest TYPE zif_types=>ty_manifest.
 
     CLASS-METHODS check_manifest
       IMPORTING
-        !manifest TYPE zif_package_json_types=>ty_manifest
+        !manifest TYPE zif_types=>ty_manifest
       RAISING
         zcx_error.
 
     CLASS-METHODS sort_manifest
       IMPORTING
-        !manifest     TYPE zif_package_json_types=>ty_manifest
+        !manifest     TYPE zif_types=>ty_manifest
       RETURNING
-        VALUE(result) TYPE zif_package_json_types=>ty_manifest.
+        VALUE(result) TYPE zif_types=>ty_manifest.
 
 ENDCLASS.
 
@@ -168,24 +168,24 @@ CLASS zcl_package_json IMPLEMENTATION.
         keywords            TYPE string_table,
         homepage            TYPE string,
         BEGIN OF bugs,
-          url   TYPE zif_package_json_types=>ty_uri,
-          email TYPE zif_package_json_types=>ty_email,
+          url   TYPE zif_types=>ty_uri,
+          email TYPE zif_types=>ty_email,
         END OF bugs,
         license             TYPE string,
-        author              TYPE zif_package_json_types=>ty_person,
-        contributors        TYPE STANDARD TABLE OF zif_package_json_types=>ty_person WITH KEY name,
-        maintainers         TYPE STANDARD TABLE OF zif_package_json_types=>ty_person WITH KEY name,
+        author              TYPE zif_types=>ty_person,
+        contributors        TYPE STANDARD TABLE OF zif_types=>ty_person WITH KEY name,
+        maintainers         TYPE STANDARD TABLE OF zif_types=>ty_person WITH KEY name,
         main                TYPE string,
         man                 TYPE string_table,
         type                TYPE string,
         BEGIN OF repository,
           type      TYPE string,
-          url       TYPE zif_package_json_types=>ty_uri,
+          url       TYPE zif_types=>ty_uri,
           directory TYPE string,
         END OF repository,
         BEGIN OF funding,
           type TYPE string,
-          url  TYPE zif_package_json_types=>ty_uri,
+          url  TYPE zif_types=>ty_uri,
         END OF funding,
         bundle_dependencies TYPE string_table,
         os                  TYPE string_table,
@@ -197,7 +197,7 @@ CLASS zcl_package_json IMPLEMENTATION.
           file_count    TYPE i,
           integrity     TYPE string,
           shasum        TYPE string,
-          signatures    TYPE STANDARD TABLE OF zif_package_json_types=>ty_signature WITH DEFAULT KEY,
+          signatures    TYPE STANDARD TABLE OF zif_types=>ty_signature WITH DEFAULT KEY,
           tarball       TYPE string,
           unpacked_size TYPE i,
         END OF dist,
@@ -206,18 +206,13 @@ CLASS zcl_package_json IMPLEMENTATION.
 
     DATA:
       json_partial TYPE ty_package_json_partial,
-      dependency   TYPE zif_package_json_types=>ty_dependency,
-      manifest     TYPE zif_package_json_types=>ty_manifest,
-      package_json TYPE zif_package_json_types=>ty_package_json.
+      dependency   TYPE zif_types=>ty_dependency,
+      manifest     TYPE zif_types=>ty_manifest.
 
     TRY.
-        DATA(ajson) = zcl_ajson=>parse( json ).
+        DATA(ajson) = zcl_ajson=>parse( json )->to_abap_corresponding_only( ).
 
-        ajson->to_abap(
-          EXPORTING
-            iv_corresponding = abap_true
-          IMPORTING
-            ev_container     = json_partial ).
+        ajson->to_abap( IMPORTING ev_container = json_partial ).
 
         MOVE-CORRESPONDING json_partial TO manifest.
 
@@ -230,14 +225,27 @@ CLASS zcl_package_json IMPLEMENTATION.
           dependency-range = ajson->get( '/devDependencies/' && dependency-name ).
           INSERT dependency INTO TABLE manifest-dev_dependencies.
         ENDLOOP.
-        LOOP AT ajson->members( '/optDependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/optDependencies/' && dependency-name ).
+        LOOP AT ajson->members( '/optionalDependencies' ) INTO dependency-name.
+          dependency-range = ajson->get( '/optionalDependencies/' && dependency-name ).
           INSERT dependency INTO TABLE manifest-optional_dependencies.
+        ENDLOOP.
+        LOOP AT ajson->members( '/peerDependencies' ) INTO dependency-name.
+          dependency-range = ajson->get( '/peerDependencies/' && dependency-name ).
+          INSERT dependency INTO TABLE manifest-peer_dependencies.
+        ENDLOOP.
+        LOOP AT ajson->members( '/bundleDependencies' ) INTO dependency-name.
+          INSERT dependency-name INTO TABLE manifest-bundle_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/engines' ) INTO dependency-name.
           dependency-range = ajson->get( '/engines/' && dependency-name ).
           INSERT dependency INTO TABLE manifest-engines.
         ENDLOOP.
+
+        manifest-dist-file_count    = ajson->get( '/dist/fileCount' ).
+        manifest-dist-unpacked_size = ajson->get( '/dist/unpackageSize' ).
+        manifest-__id               = ajson->get( '_id' ).
+        manifest-__abap_version     = ajson->get( '_abapVersion' ).
+        manifest-__apm_version      = ajson->get( '_apmVersion' ).
 
         check_manifest( manifest ).
 
@@ -253,11 +261,12 @@ CLASS zcl_package_json IMPLEMENTATION.
   METHOD convert_manifest_to_json.
 
     TRY.
-        DATA(ajson) = zcl_ajson=>new( )->keep_item_order( )->set(
-          iv_path = '/'
-          iv_val  = manifest ).
-
-        ajson = ajson->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
+        DATA(ajson) = zcl_ajson=>new(
+          )->keep_item_order(
+          )->set(
+            iv_path = '/'
+            iv_val  = manifest
+          )->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
 
         " Transpose dependencies
         ajson->setx( '/dependencies:{ }' ).
@@ -278,6 +287,13 @@ CLASS zcl_package_json IMPLEMENTATION.
         LOOP AT manifest-optional_dependencies INTO dependency.
           ajson->set(
             iv_path = '/optionalDependencies/' && dependency-name
+            iv_val  = dependency-range ).
+        ENDLOOP.
+
+        ajson->setx( 'peerDependencies:{ }' ).
+        LOOP AT manifest-peer_dependencies INTO dependency.
+          ajson->set(
+            iv_path = '/peerDependencies/' && dependency-name
             iv_val  = dependency-range ).
         ENDLOOP.
 

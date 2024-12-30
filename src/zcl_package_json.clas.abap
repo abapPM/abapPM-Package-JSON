@@ -44,6 +44,7 @@ CLASS zcl_package_json DEFINITION
       IMPORTING
         !filter       TYPE string OPTIONAL
         !instanciate  TYPE abap_bool DEFAULT abap_false
+        !is_bundle    TYPE abap_bool DEFAULT abap_undefined
       RETURNING
         VALUE(result) TYPE zif_package_json=>ty_packages.
 
@@ -64,6 +65,14 @@ CLASS zcl_package_json DEFINITION
         !json         TYPE string
       RETURNING
         VALUE(result) TYPE zif_types=>ty_manifest
+      RAISING
+        zcx_error.
+
+    CLASS-METHODS convert_json_to_manifest_abbr
+      IMPORTING
+        !json         TYPE string
+      RETURNING
+        VALUE(result) TYPE zif_types=>ty_manifest_abbreviated
       RAISING
         zcx_error.
 
@@ -197,7 +206,7 @@ CLASS zcl_package_json IMPLEMENTATION.
           file_count    TYPE i,
           integrity     TYPE string,
           shasum        TYPE string,
-          signatures    TYPE STANDARD TABLE OF zif_types=>ty_signature WITH DEFAULT KEY,
+          signatures    TYPE STANDARD TABLE OF zif_types=>ty_signature WITH KEY keyid,
           tarball       TYPE string,
           unpacked_size TYPE i,
         END OF dist,
@@ -206,15 +215,14 @@ CLASS zcl_package_json IMPLEMENTATION.
 
     DATA:
       json_partial TYPE ty_package_json_partial,
-      dependency   TYPE zif_types=>ty_dependency,
-      manifest     TYPE zif_types=>ty_manifest.
+      dependency   TYPE zif_types=>ty_dependency.
 
     TRY.
         DATA(ajson) = zcl_ajson=>parse( json )->to_abap_corresponding_only( ).
 
         ajson->to_abap( IMPORTING ev_container = json_partial ).
 
-        MOVE-CORRESPONDING json_partial TO manifest.
+        DATA(manifest) = CORRESPONDING zif_types=>ty_manifest( json_partial ).
 
         " Transpose dependencies
         LOOP AT ajson->members( '/dependencies' ) INTO dependency-name.
@@ -256,6 +264,14 @@ CLASS zcl_package_json IMPLEMENTATION.
       CATCH zcx_ajson_error INTO DATA(error).
         zcx_error=>raise_with_text( error ).
     ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD convert_json_to_manifest_abbr.
+
+    DATA(manifest) = convert_json_to_manifest( json ).
+    result = CORRESPONDING #( manifest ).
 
   ENDMETHOD.
 
@@ -334,12 +350,11 @@ CLASS zcl_package_json IMPLEMENTATION.
     IF sy-subrc = 0.
       result = <instance>-instance.
     ELSE.
-      CREATE OBJECT result TYPE zcl_package_json
-        EXPORTING
-          package = package
-          name    = name
-          version = version
-          private = private.
+      result = NEW zcl_package_json(
+        package = package
+        name    = name
+        version = version
+        private = private ).
 
       DATA(instance) = VALUE ty_instance(
         package  = package
@@ -352,7 +367,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD get_package_from_key.
 
-    SPLIT key AT ':' INTO DATA(prefix) result DATA(suffix).
+    SPLIT key AT ':' INTO DATA(prefix) result DATA(suffix) ##NEEDED.
     result = to_upper( result ).
 
   ENDMETHOD.
@@ -360,7 +375,8 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD get_package_key.
 
-    result = |{ zif_persist_apm=>c_key_type-package }:{ package }:{ zif_persist_apm=>c_key_extra-package_json }|.
+    result = |{ zif_persist_apm=>c_key_type-package }:{ package }:|
+          && |{ zif_persist_apm=>c_key_extra-package_json }|.
 
   ENDMETHOD.
 
@@ -396,11 +412,12 @@ CLASS zcl_package_json IMPLEMENTATION.
       IF instanciate = abap_true.
         TRY.
             result_item-instance    = factory( result_item-package )->load( ).
-            result_item-name        = result_item-instance->get( )-name.
-            result_item-version     = result_item-instance->get( )-version.
-            result_item-description = result_item-instance->get( )-description.
-            result_item-type        = result_item-instance->get( )-type.
-            result_item-private     = result_item-instance->get( )-private.
+            DATA(package_json)      = result_item-instance->get( ).
+            result_item-name        = package_json-name.
+            result_item-version     = package_json-version.
+            result_item-description = package_json-description.
+            result_item-type        = package_json-type.
+            result_item-private     = package_json-private.
           CATCH zcx_error ##NO_HANDLER.
         ENDTRY.
       ENDIF.
@@ -408,16 +425,52 @@ CLASS zcl_package_json IMPLEMENTATION.
       INSERT result_item INTO TABLE result.
     ENDLOOP.
 
+    " Check package hierarchy to determine which packages are bundled
+    LOOP AT result ASSIGNING FIELD-SYMBOL(<result_item>).
+      TRY.
+          DATA(super_packages) = zcl_abapgit_factory=>get_sap_package( <result_item>-package )->list_superpackages( ).
+
+          LOOP AT super_packages ASSIGNING FIELD-SYMBOL(<super_package>) WHERE table_line <> <result_item>-package.
+            IF line_exists( result[ KEY package COMPONENTS package = <super_package> ] ).
+              <result_item>-bundle = abap_true.
+              <result_item>-parent = <super_package>.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
+
+        CATCH zcx_abapgit_exception ##NO_HANDLER.
+      ENDTRY.
+    ENDLOOP.
+
+    CASE is_bundle.
+      WHEN abap_true.
+        DELETE result WHERE bundle = abap_false.
+      WHEN abap_false.
+        DELETE result WHERE bundle = abap_true.
+    ENDCASE.
+
   ENDMETHOD.
 
 
   METHOD sort_manifest.
 
     result = manifest.
-    SORT result-dependencies BY name.
-    SORT result-dev_dependencies BY name.
-    SORT result-optional_dependencies BY name.
-    SORT result-engines BY name.
+
+    " Keeping things in order avoid unnecessary diffs
+    SORT:
+      result-dependencies BY name,
+      result-dev_dependencies BY name,
+      result-optional_dependencies BY name,
+      result-peer_dependencies BY name,
+      result-bundle_dependencies,
+      result-engines BY name,
+      result-contributors BY name,
+      result-maintainers BY name,
+      result-keywords,
+      result-man,
+      result-os,
+      result-cpu,
+      result-db.
 
   ENDMETHOD.
 
@@ -443,7 +496,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD zif_package_json~get.
 
-    MOVE-CORRESPONDING manifest TO result.
+    result = CORRESPONDING #( manifest ).
 
   ENDMETHOD.
 
@@ -461,7 +514,7 @@ CLASS zcl_package_json IMPLEMENTATION.
   METHOD zif_package_json~is_valid.
 
     TRY.
-        result = boolc( zcl_package_json_valid=>check( manifest ) IS INITIAL ).
+        result = xsdbool( zcl_package_json_valid=>check( manifest ) IS INITIAL ).
       CATCH zcx_error.
         result = abap_false.
     ENDTRY.
@@ -489,7 +542,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD zif_package_json~set.
 
-    MOVE-CORRESPONDING package_json TO manifest.
+    manifest = CORRESPONDING #( package_json ).
     check_manifest( manifest ).
     manifest = sort_manifest( manifest ).
     result   = me.

@@ -1,10 +1,9 @@
-CLASS lcl_test DEFINITION FINAL FOR TESTING
+CLASS ltcl_package_json_valid DEFINITION FINAL FOR TESTING
   RISK LEVEL HARMLESS
   DURATION SHORT.
 
   PRIVATE SECTION.
     DATA tap TYPE REF TO zcl_tap.
-    DATA cut TYPE REF TO zcl_package_json_valid.
 
     METHODS:
       setup,
@@ -15,39 +14,38 @@ CLASS lcl_test DEFINITION FINAL FOR TESTING
 
 ENDCLASS.
 
-CLASS lcl_test IMPLEMENTATION.
+CLASS ltcl_package_json_valid IMPLEMENTATION.
 
   METHOD setup.
-    CREATE OBJECT tap.
-    CREATE OBJECT cut.
+    tap = NEW #( ).
   ENDMETHOD.
 
   METHOD is_valid_name.
-    tap->_( cut->is_valid_name( '' ) )->false( ).
-    tap->_( cut->is_valid_name( 'test' ) )->true( ).
-    tap->_( cut->is_valid_name( 'test/invalid' ) )->false( ).
-    tap->_( cut->is_valid_name( '@test/valid' ) )->true( ).
-    tap->_( cut->is_valid_name( '@test/@invalid' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_valid_name( '' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_valid_name( 'test' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_name( 'test/invalid' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_valid_name( '@test/valid' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_name( '@test/@invalid' ) )->false( ).
   ENDMETHOD.
 
   METHOD is_scoped_name.
-    tap->_( cut->is_scoped_name( '' ) )->false( ).
-    tap->_( cut->is_scoped_name( 'test' ) )->false( ).
-    tap->_( cut->is_scoped_name( 'test/invalid' ) )->false( ).
-    tap->_( cut->is_scoped_name( '@test/valid' ) )->true( ).
-    tap->_( cut->is_scoped_name( '@test/@invalid' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_scoped_name( '' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_scoped_name( 'test' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_scoped_name( 'test/invalid' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_scoped_name( '@test/valid' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_scoped_name( '@test/@invalid' ) )->false( ).
   ENDMETHOD.
 
   METHOD is_valid_email.
-    tap->_( cut->is_valid_email( '' ) )->true( ).
-    tap->_( cut->is_valid_email( 'test@example.com' ) )->true( ).
-    tap->_( cut->is_valid_email( 'test@invalid' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_valid_email( '' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_email( 'test@example.com' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_email( 'test@invalid' ) )->false( ).
   ENDMETHOD.
 
   METHOD is_valid_url.
-    tap->_( cut->is_valid_url( '' ) )->true( ).
-    tap->_( cut->is_valid_url( 'https://example.com' ) )->true( ).
-    tap->_( cut->is_valid_url( 'git://invalid.com' ) )->false( ).
+    tap->_( zcl_package_json_valid=>is_valid_url( '' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_url( 'https://example.com' ) )->true( ).
+    tap->_( zcl_package_json_valid=>is_valid_url( '\\git://invalid.com' ) )->false( ).
   ENDMETHOD.
 
 ENDCLASS.

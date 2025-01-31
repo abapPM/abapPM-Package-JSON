@@ -96,6 +96,8 @@ CLASS zcl_package_json DEFINITION
       END OF ty_instance,
       ty_instances TYPE HASHED TABLE OF ty_instance WITH UNIQUE KEY package.
 
+    TYPES ty_package_list TYPE STANDARD TABLE OF devclass WITH KEY table_line.
+
     CLASS-DATA:
       db_persist TYPE REF TO zif_persist_apm,
       instances  TYPE ty_instances.
@@ -122,6 +124,12 @@ CLASS zcl_package_json DEFINITION
         !value        TYPE string
       RETURNING
         VALUE(result) TYPE string.
+
+    CLASS-METHODS get_super_packages
+      IMPORTING
+        !package      TYPE devclass
+      RETURNING
+        VALUE(result) TYPE ty_package_list.
 
 ENDCLASS.
 
@@ -402,6 +410,21 @@ CLASS zcl_package_json IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_super_packages.
+
+    DATA(devclass) = package.
+    DO.
+      INSERT devclass INTO TABLE result.
+      SELECT SINGLE parentcl FROM tdevc INTO @DATA(parent) WHERE devclass = @devclass.
+      IF sy-subrc <> 0 OR parent IS INITIAL.
+        EXIT.
+      ENDIF.
+      devclass = parent.
+    ENDDO.
+
+  ENDMETHOD.
+
+
   METHOD injector.
 
     READ TABLE instances ASSIGNING FIELD-SYMBOL(<instance>) WITH TABLE KEY package = package.
@@ -423,12 +446,19 @@ CLASS zcl_package_json IMPLEMENTATION.
       && zif_persist_apm=>c_key_extra-package_json ).
 
     LOOP AT list ASSIGNING FIELD-SYMBOL(<list>).
+      CONVERT TIME STAMP <list>-timestamp
+        TIME ZONE 'UTC'
+        INTO DATE DATA(date)
+        TIME DATA(time).
+
+      DATA(changed_at) = |{ date DATE = ISO } { time TIME = ISO }|.
+
       DATA(result_item) = VALUE zif_package_json=>ty_package(
         key            = <list>-keys
         package        = get_package_from_key( <list>-keys )
         changed_by     = <list>-user
         changed_at_raw = <list>-timestamp
-        changed_at     = zcl_abapgit_gui_chunk_lib=>render_timestamp( <list>-timestamp ) ).
+        changed_at     = changed_at ).
 
       IF instanciate = abap_true.
         TRY.
@@ -448,19 +478,15 @@ CLASS zcl_package_json IMPLEMENTATION.
 
     " Check package hierarchy to determine which packages are bundled
     LOOP AT result ASSIGNING FIELD-SYMBOL(<result_item>).
-      TRY.
-          DATA(super_packages) = zcl_abapgit_factory=>get_sap_package( <result_item>-package )->list_superpackages( ).
+      DATA(super_packages) = get_super_packages( <result_item>-package ).
 
-          LOOP AT super_packages ASSIGNING FIELD-SYMBOL(<super_package>) WHERE table_line <> <result_item>-package.
-            IF line_exists( result[ KEY package COMPONENTS package = <super_package> ] ).
-              <result_item>-bundle = abap_true.
-              <result_item>-parent = <super_package>.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
-
-        CATCH zcx_abapgit_exception ##NO_HANDLER.
-      ENDTRY.
+      LOOP AT super_packages ASSIGNING FIELD-SYMBOL(<super_package>) WHERE table_line <> <result_item>-package.
+        IF line_exists( result[ KEY package COMPONENTS package = <super_package> ] ).
+          <result_item>-bundle = abap_true.
+          <result_item>-parent = <super_package>.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
     ENDLOOP.
 
     CASE is_bundle.

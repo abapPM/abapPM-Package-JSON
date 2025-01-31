@@ -321,11 +321,11 @@ CLASS ltcl_package_json IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_persons.
-
+    ASSERT 0 = 0.
   ENDMETHOD.
 
   METHOD set_persons.
-
+    ASSERT 0 = 0.
   ENDMETHOD.
 
   METHOD dependencies_json_to_abap.

@@ -33,6 +33,12 @@
   },
   "dependencies": {
     "@apm/persistence": "^1.0.0",
-    "ajson": "^1.1.10"
+    "@apm/types": "^1.0.0",
+    "ajson": "^1.1.10",
+    "error": "^1.0.0"
+  },
+  "engines": {
+    "abap": ">=7.50",
+    "apm": ">=1"
   }
 }

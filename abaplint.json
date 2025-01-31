@@ -9,6 +9,16 @@
       "files": "/src/**/*.*",
       "folder": "/deps2",
       "url": "https://github.com/abapPM/ABAP-Error"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps3",
+      "url": "https://github.com/abapPM/abapPM-Persistence"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps4",
+      "url": "https://github.com/sbcgua/ajson"
     }
   ],
   "global": {
@@ -180,7 +190,7 @@
       "aqqu": "^Z",
       "aqsg": "^Z",
       "auth": "^Z",
-      "clas": "^ZC(L|X)\\_",
+      "clas": "^ZC(L|X)\\_PACKAGE_JSON",
       "cmod": "^Z",
       "doma": "^Z",
       "dtel": "^Z",
@@ -192,7 +202,7 @@
       "idoc": "^Z",
       "ignoreNames": [],
       "ignorePatterns": [],
-      "intf": "^ZIF\\_",
+      "intf": "^ZIF\\_PACKAGE_JSON",
       "msag": "^Z",
       "patternKind": "required",
       "pinf": "^Z",

@@ -5,8 +5,8 @@
   "keywords": [
     "abap",
     "apm",
-    "package-json",
-    "package-abap-json"
+    "package-abap-json",
+    "package-json"
   ],
   "homepage": "https://abappm.com",
   "bugs": {
@@ -24,15 +24,15 @@
     }
   ],
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/abapPM/abapPM-Package-JSON.git"
+    "type": "https",
+    "url": "https://github.com/abapPM/abapPM-Package-JSON"
   },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/abappm"
   },
   "dependencies": {
-    "ajson": "^1.1.10",
-    "@apm/persist": "^1.0.0"
+    "@apm/persistence": "^1.0.0",
+    "ajson": "^1.1.10"
   }
 }

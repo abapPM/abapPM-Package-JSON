@@ -101,7 +101,7 @@
     "cyclic_oo": true,
     "cyclomatic_complexity": true,
     "dangerous_statement": true,
-    "db_operation_in_loop": true,
+    "db_operation_in_loop": false,
     "definitions_top": true,
     "description_empty": true,
     "double_space": true,

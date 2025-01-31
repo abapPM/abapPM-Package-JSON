@@ -18,6 +18,11 @@
     {
       "files": "/src/**/*.*",
       "folder": "/deps4",
+      "url": "https://github.com/abapPM/abapPM-Types"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps5",
       "url": "https://github.com/sbcgua/ajson"
     }
   ],

@@ -117,6 +117,12 @@ CLASS zcl_package_json DEFINITION
       RETURNING
         VALUE(result) TYPE zif_types=>ty_manifest.
 
+    CLASS-METHODS replace_slash
+      IMPORTING
+        !value        TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
+
 ENDCLASS.
 
 
@@ -226,28 +232,28 @@ CLASS zcl_package_json IMPLEMENTATION.
 
         " Transpose dependencies
         LOOP AT ajson->members( '/dependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/dependencies/' && dependency-name ).
+          dependency-range = ajson->get( '/dependencies/' && replace_slash( dependency-name ) ).
           INSERT dependency INTO TABLE manifest-dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/devDependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/devDependencies/' && dependency-name ).
+          dependency-range = ajson->get( '/devDependencies/' && replace_slash( dependency-name ) ).
           INSERT dependency INTO TABLE manifest-dev_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/optionalDependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/optionalDependencies/' && dependency-name ).
+          dependency-range = ajson->get( '/optionalDependencies/' && replace_slash( dependency-name ) ).
           INSERT dependency INTO TABLE manifest-optional_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/peerDependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/peerDependencies/' && dependency-name ).
+          dependency-range = ajson->get( '/peerDependencies/' && replace_slash( dependency-name ) ).
           INSERT dependency INTO TABLE manifest-peer_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/bundleDependencies' ) INTO dependency-name.
-          dependency-range = ajson->get( '/bundleDependencies/' && dependency-name ).
+          dependency-range = ajson->get( '/bundleDependencies/' && replace_slash( dependency-name ) ).
           " store just the range, which is the name of the bundle dependency
           INSERT dependency-range INTO TABLE manifest-bundle_dependencies.
         ENDLOOP.
         LOOP AT ajson->members( '/engines' ) INTO dependency-name.
-          dependency-range = ajson->get( '/engines/' && dependency-name ).
+          dependency-range = ajson->get( '/engines/' && replace_slash( dependency-name ) ).
           INSERT dependency INTO TABLE manifest-engines.
         ENDLOOP.
 
@@ -277,6 +283,8 @@ CLASS zcl_package_json IMPLEMENTATION.
 
 
   METHOD convert_manifest_to_json.
+
+    DATA skip_paths TYPE string_table.
 
     TRY.
         DATA(ajson) = zcl_ajson=>new(
@@ -325,14 +333,27 @@ CLASS zcl_package_json IMPLEMENTATION.
         IF is_complete = abap_false.
           ajson = ajson->filter( lcl_ajson_filters=>create_empty_filter( ) ).
           IF manifest-private = abap_false.
-            ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = '/private' ) ).
+            INSERT `/private` INTO TABLE skip_paths.
+          ENDIF.
+          IF manifest-deprecated = abap_false.
+            INSERT `/deprecated` INTO TABLE skip_paths.
           ENDIF.
         ENDIF.
 
         IF is_package_json = abap_true.
           " Remove the manifest fields that are not in package.json
-          ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter(
-            iv_skip_paths = '/dist,/deprecated,/_id,/_abapVersion,/_apmVersion' ) ).
+          INSERT `/deprecated` INTO TABLE skip_paths.
+          INSERT `/dist` INTO TABLE skip_paths.
+          INSERT `/_id` INTO TABLE skip_paths.
+          INSERT `/_abapVersion` INTO TABLE skip_paths.
+          INSERT `/_apmVersion` INTO TABLE skip_paths.
+        ENDIF.
+
+        IF skip_paths IS NOT INITIAL.
+          DATA(skip_path) = concat_lines_of(
+            table = skip_paths
+            sep   = ',' ).
+          ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = skip_path ) ).
         ENDIF.
 
         result = ajson->stringify( 2 ).
@@ -448,6 +469,17 @@ CLASS zcl_package_json IMPLEMENTATION.
       WHEN abap_false.
         DELETE result WHERE bundle = abap_true.
     ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD replace_slash.
+
+    result = replace(
+      val  = value
+      sub  = '/'
+      with = cl_abap_char_utilities=>horizontal_tab
+      occ  = 0 ).
 
   ENDMETHOD.
 

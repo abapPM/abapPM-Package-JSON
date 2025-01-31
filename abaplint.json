@@ -13,16 +13,31 @@
     {
       "files": "/src/**/*.*",
       "folder": "/deps3",
-      "url": "https://github.com/abapPM/abapPM-Persistence"
+      "url": "https://github.com/abapPM/ABAP-SemVer"
     },
     {
       "files": "/src/**/*.*",
       "folder": "/deps4",
-      "url": "https://github.com/abapPM/abapPM-Types"
+      "url": "https://github.com/abapPM/ABAP-TAP"
     },
     {
       "files": "/src/**/*.*",
       "folder": "/deps5",
+      "url": "https://github.com/abapPM/ABAP-URL"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps6",
+      "url": "https://github.com/abapPM/abapPM-Persistence"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps7",
+      "url": "https://github.com/abapPM/abapPM-Types"
+    },
+    {
+      "files": "/src/**/*.*",
+      "folder": "/deps8",
       "url": "https://github.com/sbcgua/ajson"
     }
   ],

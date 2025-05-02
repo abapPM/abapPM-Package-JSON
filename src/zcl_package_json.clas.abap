@@ -267,9 +267,9 @@ CLASS zcl_package_json IMPLEMENTATION.
 
         manifest-dist-file_count    = ajson->get( '/dist/fileCount' ).
         manifest-dist-unpacked_size = ajson->get( '/dist/unpackageSize' ).
-        manifest-__id               = ajson->get( '_id' ).
-        manifest-__abap_version     = ajson->get( '_abapVersion' ).
-        manifest-__apm_version      = ajson->get( '_apmVersion' ).
+        manifest-_id                = ajson->get( '_id' ).
+        manifest-_abap_version      = ajson->get( '_abapVersion' ).
+        manifest-_apm_version       = ajson->get( '_apmVersion' ).
 
         check_manifest( manifest ).
 
@@ -301,6 +301,20 @@ CLASS zcl_package_json IMPLEMENTATION.
             iv_path = '/'
             iv_val  = manifest
           )->map( zcl_ajson_mapping=>create_to_camel_case( ) ).
+
+        " Direct mappings due to camel case
+        ajson->delete( 'id' ).
+        ajson->delete( 'abapVersion' ).
+        ajson->delete( 'apmVersion' ).
+        ajson->set(
+          iv_path = '/_id'
+          iv_val  = manifest-_id ).
+        ajson->set(
+          iv_path = '/_abapVersion'
+          iv_val  = manifest-_abap_version ).
+        ajson->set(
+          iv_path = '/_apmVersion'
+          iv_val  = manifest-_apm_version ).
 
         " Transpose dependencies
         ajson->setx( '/dependencies:{ }' ).

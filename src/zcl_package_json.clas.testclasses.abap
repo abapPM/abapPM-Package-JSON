@@ -3,7 +3,22 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
 
   PRIVATE SECTION.
 
-    DATA cut TYPE REF TO zif_package_json.
+    DATA:
+      cut                       TYPE REF TO zif_package_json,
+      test_package_json         TYPE zif_types=>ty_package_json,
+      test_manifest             TYPE zif_types=>ty_manifest,
+      test_manifest_abbreviated TYPE zif_types=>ty_manifest_abbreviated,
+      test_json                 TYPE string,
+      test_json_full            TYPE string,
+      test_json_abbreviated     TYPE string.
+
+    METHODS setup.
+
+    METHODS prepare_string
+      IMPORTING
+        input         TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
 
     METHODS init_test
       IMPORTING
@@ -29,20 +44,332 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
     METHODS:
       valid_packages FOR TESTING,
       invalid_packages FOR TESTING,
-      get_complete FOR TESTING RAISING zcx_error,
-      set_complete FOR TESTING RAISING zcx_error,
       get_package FOR TESTING RAISING zcx_error,
       set_package FOR TESTING RAISING zcx_error,
       get_persons FOR TESTING RAISING zcx_error,
       set_persons FOR TESTING RAISING zcx_error,
       dependencies_json_to_abap FOR TESTING RAISING zcx_error,
-      dependencies_abap_to_json FOR TESTING RAISING zcx_error.
+      dependencies_abap_to_json FOR TESTING RAISING zcx_error,
+      get_complete FOR TESTING RAISING zcx_error,
+      set_complete FOR TESTING RAISING zcx_error,
+      convert_json_to_manifest FOR TESTING RAISING zcx_error,
+      convert_json_to_manifest_abbr FOR TESTING RAISING zcx_error,
+      convert_manifest_to_json FOR TESTING RAISING zcx_error,
+      convert_manifest_abbr_to_json FOR TESTING RAISING zcx_error,
+      convert_manifest_to_pack_json FOR TESTING RAISING zcx_error.
 
 ENDCLASS.
 
 CLASS zcl_package_json DEFINITION LOCAL FRIENDS ltcl_package_json.
 
 CLASS ltcl_package_json IMPLEMENTATION.
+
+  METHOD setup.
+
+    test_json = ``
+      && `{`
+      && `|  "name": "test",`
+      && `|  "version": "1.0.0",`
+      && `|  "description": "hello world",`
+      && `|  "type": "module",`
+      && `|  "keywords": [`
+      && `|    "apm"`
+      && `|  ],`
+      && `|  "homepage": "https://abappm.com",`
+      && `|  "icon": "https://abappm.com/apm_logo.svg",`
+      && `|  "bugs": {`
+      && `|    "url": "https://abappm.com/bugs",`
+      && `|    "email": "support@test.com"`
+      && `|  },`
+      && `|  "license": "MIT",`
+      && `|  "author": {`
+      && `|    "name": "Marc",`
+      && `|    "url": "https://abappm.com",`
+      && `|    "email": "marc@test.com",`
+      && `|    "avatar": "https://gravatar.com/abapPM"`
+      && `|  },`
+      && `|  "contributors": [`
+      && `|    {`
+      && `|      "name": "Marc",`
+      && `|      "url": "https://abappm.com",`
+      && `|      "email": "marc@test.com",`
+      && `|      "avatar": "https://gravatar.com/abapPM"`
+      && `|    }`
+      && `|  ],`
+      && `|  "maintainers": [`
+      && `|    {`
+      && `|      "name": "Marc",`
+      && `|      "url": "https://abappm.com",`
+      && `|      "email": "marc@test.com",`
+      && `|      "avatar": "https://gravatar.com/abapPM"`
+      && `|    }`
+      && `|  ],`
+      && `|  "main": "test.prog",`
+      && `|  "man": [`
+      && `|    "manual.md"`
+      && `|  ],`
+      && `|  "repository": {`
+      && `|    "type": "http",`
+      && `|    "url": "https://github.com/abapPM/abapPM",`
+      && `|    "directory": "subdir"`
+      && `|  },`
+      && `|  "funding": {`
+      && `|    "type": "github",`
+      && `|    "url": "https://github.com/abapPM"`
+      && `|  },`
+      && `|  "dependencies": {`
+      && `|    "dep2": "2.0.0"`
+      && `|  },`
+      && `|  "devDependencies": {`
+      && `|    "dep3": ">3"`
+      && `|  },`
+      && `|  "optionalDependencies": {`
+      && `|    "dep4": "^4.1.0"`
+      && `|  },`
+      && `|  "peerDependencies": {`
+      && `|    "dep5": "^5.0.1"`
+      && `|  },`
+      && `|  "bundleDependencies": [`
+      && `|    "dep2"`
+      && `|  ],`
+      && `|  "engines": {`
+      && `|    "abap": ">=7.50",`
+      && `|    "apm": ">=1"`
+      && `|  },`
+      && `|  "os": [`
+      && `|    "linux"`
+      && `|  ],`
+      && `|  "cpu": [`
+      && `|    "x86-64"`
+      && `|  ],`
+      && `|  "db": [`
+      && `|    "hdb"`
+      && `|  ],`
+      && `|  "private": true,`
+      && `|  "readme": "# Readme"`
+      && `|}`.
+
+    test_json_full = ``
+      && `{`
+      && `|  "name": "test",`
+      && `|  "version": "1.0.0",`
+      && `|  "description": "hello world",`
+      && `|  "type": "module",`
+      && `|  "keywords": [`
+      && `|    "apm"`
+      && `|  ],`
+      && `|  "homepage": "https://abappm.com",`
+      && `|  "icon": "https://abappm.com/apm_logo.svg",`
+      && `|  "bugs": {`
+      && `|    "url": "https://abappm.com/bugs",`
+      && `|    "email": "support@test.com"`
+      && `|  },`
+      && `|  "license": "MIT",`
+      && `|  "author": {`
+      && `|    "name": "Marc",`
+      && `|    "url": "https://abappm.com",`
+      && `|    "email": "marc@test.com",`
+      && `|    "avatar": "https://gravatar.com/abapPM"`
+      && `|  },`
+      && `|  "contributors": [`
+      && `|    {`
+      && `|      "name": "Marc",`
+      && `|      "url": "https://abappm.com",`
+      && `|      "email": "marc@test.com",`
+      && `|      "avatar": "https://gravatar.com/abapPM"`
+      && `|    }`
+      && `|  ],`
+      && `|  "maintainers": [`
+      && `|    {`
+      && `|      "name": "Marc",`
+      && `|      "url": "https://abappm.com",`
+      && `|      "email": "marc@test.com",`
+      && `|      "avatar": "https://gravatar.com/abapPM"`
+      && `|    }`
+      && `|  ],`
+      && `|  "main": "test.prog",`
+      && `|  "man": [`
+      && `|    "manual.md"`
+      && `|  ],`
+      && `|  "repository": {`
+      && `|    "type": "http",`
+      && `|    "url": "https://github.com/abapPM/abapPM",`
+      && `|    "directory": "subdir"`
+      && `|  },`
+      && `|  "funding": {`
+      && `|    "type": "github",`
+      && `|    "url": "https://github.com/abapPM"`
+      && `|  },`
+      && `|  "dependencies": {`
+      && `|    "dep2": "2.0.0"`
+      && `|  },`
+      && `|  "devDependencies": {`
+      && `|    "dep3": ">3"`
+      && `|  },`
+      && `|  "optionalDependencies": {`
+      && `|    "dep4": "^4.1.0"`
+      && `|  },`
+      && `|  "peerDependencies": {`
+      && `|    "dep5": "^5.0.1"`
+      && `|  },`
+      && `|  "bundleDependencies": [`
+      && `|    "dep2"`
+      && `|  ],`
+      && `|  "engines": {`
+      && `|    "abap": ">=7.50",`
+      && `|    "apm": ">=1"`
+      && `|  },`
+      && `|  "os": [`
+      && `|    "linux"`
+      && `|  ],`
+      && `|  "cpu": [`
+      && `|    "x86-64"`
+      && `|  ],`
+      && `|  "db": [`
+      && `|    "hdb"`
+      && `|  ],`
+      && `|  "private": true,`
+      && `|  "readme": "# Readme",`
+      && `|  "dist": {`
+      && `|    "fileCount": 8,`
+      && `|    "shasum": "be",`
+      && `|    "tarball": "test-1.0.0.tgz",`
+      && `|    "unpackedSize": 2015,`
+      && `|    "integrity": "edge",`
+      && `|    "signatures": [`
+      && `|      {`
+      && `|        "keyid": "key",`
+      && `|        "sig": "sig"`
+      && `|      }`
+      && `|    ]`
+      && `|  },`
+      && `|  "deprecated": true,`
+      && `|  "_id": "test@1.0.0",`
+      && `|  "_abapVersion": "7.54.0",`
+      && `|  "_apmVersion": "1.0.0"`
+      && `|}`.
+
+    test_json_abbreviated = ``
+      && `{`
+      && `|  "name": "test",`
+      && `|  "version": "1.0.0",`
+      && `|  "dependencies": {`
+      && `|    "dep2": "2.0.0"`
+      && `|  },`
+      && `|  "devDependencies": {`
+      && `|    "dep3": ">3"`
+      && `|  },`
+      && `|  "optionalDependencies": {`
+      && `|    "dep4": "^4.1.0"`
+      && `|  },`
+      && `|  "peerDependencies": {`
+      && `|    "dep5": "^5.0.1"`
+      && `|  },`
+      && `|  "bundleDependencies": [`
+      && `|    "dep2"`
+      && `|  ],`
+      && `|  "engines": {`
+      && `|    "abap": ">=7.50",`
+      && `|    "apm": ">=1"`
+      && `|  },`
+      && `|  "os": [`
+      && `|    "linux"`
+      && `|  ],`
+      && `|  "cpu": [`
+      && `|    "x86-64"`
+      && `|  ],`
+      && `|  "db": [`
+      && `|    "hdb"`
+      && `|  ],`
+      && `|  "dist": {`
+      && `|    "fileCount": 8,`
+      && `|    "shasum": "be",`
+      && `|    "tarball": "test-1.0.0.tgz",`
+      && `|    "unpackedSize": 2015,`
+      && `|    "integrity": "edge",`
+      && `|    "signatures": [`
+      && `|      {`
+      && `|        "keyid": "key",`
+      && `|        "sig": "sig"`
+      && `|      }`
+      && `|    ]`
+      && `|  },`
+      && `|  "deprecated": true`
+      && `|}`.
+
+    test_json             = prepare_string( test_json ).
+    test_json_full        = prepare_string( test_json_full ).
+    test_json_abbreviated = prepare_string( test_json_abbreviated ).
+
+    DATA(person) = VALUE zif_types=>ty_person(
+      name   = `Marc`
+      url    = `https://abappm.com`
+      email  = `marc@test.com`
+      avatar = `https://gravatar.com/abapPM` ).
+
+    test_package_json = VALUE #(
+      name                  = `test`
+      version               = `1.0.0`
+      description           = `hello world`
+      type                  = `module`
+      keywords              = VALUE #( ( `apm` ) )
+      homepage              = `https://abappm.com`
+      icon                  = `https://abappm.com/apm_logo.svg`
+      bugs                  = VALUE #(
+                                url   = `https://abappm.com/bugs`
+                                email = `support@test.com` )
+      license               = `MIT`
+      author                = person
+      contributors          = VALUE #( ( person ) )
+      maintainers           = VALUE #( ( person ) )
+      main                  = `test.prog`
+      man                   = VALUE #( ( `manual.md` ) )
+      repository            = VALUE #(
+                                type      = `http`
+                                url       = `https://github.com/abapPM/abapPM`
+                                directory = `subdir` )
+      funding               = VALUE #(
+                                type = `github`
+                                url  = `https://github.com/abapPM` )
+      dependencies          = VALUE #( ( key = `dep2` range = `2.0.0` ) )
+      dev_dependencies      = VALUE #( ( key = `dep3` range = `>3` ) )
+      optional_dependencies = VALUE #( ( key = `dep4` range = `^4.1.0` ) )
+      peer_dependencies     = VALUE #( ( key = `dep5` range = `^5.0.1` ) )
+      bundle_dependencies   = VALUE #( ( `dep2` ) )
+      engines               = VALUE #(
+                                ( key = `abap` range = `>=7.50` )
+                                ( key = `apm` range = `>=1` ) )
+      os                    = VALUE #( ( `linux` ) )
+      cpu                   = VALUE #( ( `x86-64` ) )
+      db                    = VALUE #( ( `hdb` ) )
+      readme                = `# Readme`
+      private               = abap_true ).
+
+    test_manifest = CORRESPONDING #( test_package_json ).
+
+    test_manifest-deprecated    = abap_true.
+    test_manifest-dist          = VALUE #(
+                                    file_count    = 8
+                                    integrity     = `edge`
+                                    shasum        = `be`
+                                    unpacked_size = 2015
+                                    tarball       = `test-1.0.0.tgz`
+                                    signatures    = VALUE #( ( keyid = `key` sig = `sig`) ) ).
+    test_manifest-_id           = `test@1.0.0`.
+    test_manifest-_abap_version = `7.54.0`.
+    test_manifest-_apm_version  = `1.0.0`.
+
+    test_manifest_abbreviated = CORRESPONDING #( test_manifest ).
+
+  ENDMETHOD.
+
+  METHOD prepare_string.
+    result = replace(
+      val  = input
+      sub  = '|'
+      with = |\n|
+      occ  = 0 ).
+  ENDMETHOD.
 
   METHOD init_test.
 
@@ -147,300 +474,6 @@ CLASS ltcl_package_json IMPLEMENTATION.
     test_invalid( '$TEST,test,1' ).
   ENDMETHOD.
 
-  METHOD get_complete.
-
-    init_test( '$TEST' ).
-
-    DATA(person) = VALUE zif_types=>ty_person(
-      name   = 'Marc'
-      url    = 'https://abappm.com'
-      email  = 'marc@test.com'
-      avatar = 'https://gravatar.com/abapPM' ).
-
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
-      name                 = 'test'
-      version              = '1.0.0'
-      description          = 'hello world'
-      type                 = 'module'
-      homepage             = 'https://abappm.com'
-      bugs-url             = 'https://abappm.com/bugs'
-      bugs-email           = 'support@test.com'
-      license              = 'MIT'
-      author               = person
-      main                 = 'test.prog'
-      repository-type      = 'http'
-      repository-url       = 'https://github.com/abapPM/abapPM'
-      repository-directory = 'subdir'
-      funding-type         = 'github'
-      funding-url          = 'https://github.com/abapPM'
-      readme               = '# Readme'
-      private              = abap_true ).
-
-    INSERT person INTO TABLE package_json-contributors.
-    INSERT person INTO TABLE package_json-maintainers.
-    INSERT `apm` INTO TABLE package_json-keywords.
-    INSERT `manual.md` INTO TABLE package_json-man.
-    INSERT `linux` INTO TABLE package_json-os.
-    INSERT `x86-64` INTO TABLE package_json-cpu.
-    INSERT `hdb` INTO TABLE package_json-db.
-
-    DATA(dependency) = VALUE zif_types=>ty_dependency(
-      name  = 'dep2'
-      range = '2.0.0' ).
-    INSERT dependency INTO TABLE package_json-dependencies.
-    dependency-name  = 'dep3'.
-    dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep4'.
-    dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-optional_dependencies.
-    dependency-name  = 'dep5'.
-    dependency-range = '^5.0.1'.
-    INSERT dependency INTO TABLE package_json-peer_dependencies.
-    INSERT `dep2` INTO TABLE package_json-bundle_dependencies.
-    dependency-name  = 'abap'.
-    dependency-range = '>=7.50'.
-    INSERT dependency INTO TABLE package_json-engines.
-    dependency-name  = 'apm'.
-    dependency-range = '>=1'.
-    INSERT dependency INTO TABLE package_json-engines.
-
-    cut->set( package_json ).
-
-    DATA(json) = |\{\n|
-      && |  "name": "test",\n|
-      && |  "version": "1.0.0",\n|
-      && |  "description": "hello world",\n|
-      && |  "type": "module",\n|
-      && |  "keywords": [\n|
-      && |    "apm"\n|
-      && |  ],\n|
-      && |  "homepage": "https://abappm.com",\n|
-      && |  "bugs": \{\n|
-      && |    "url": "https://abappm.com/bugs",\n|
-      && |    "email": "support@test.com"\n|
-      && |  \},\n|
-      && |  "license": "MIT",\n|
-      && |  "author": \{\n|
-      && |    "name": "Marc",\n|
-      && |    "url": "https://abappm.com",\n|
-      && |    "email": "marc@test.com",\n|
-      && |    "avatar": "https://gravatar.com/abapPM"\n|
-      && |  \},\n|
-      && |  "contributors": [\n|
-      && |    \{\n|
-      && |      "name": "Marc",\n|
-      && |      "url": "https://abappm.com",\n|
-      && |      "email": "marc@test.com",\n|
-      && |      "avatar": "https://gravatar.com/abapPM"\n|
-      && |    \}\n|
-      && |  ],\n|
-      && |  "maintainers": [\n|
-      && |    \{\n|
-      && |      "name": "Marc",\n|
-      && |      "url": "https://abappm.com",\n|
-      && |      "email": "marc@test.com",\n|
-      && |      "avatar": "https://gravatar.com/abapPM"\n|
-      && |    \}\n|
-      && |  ],\n|
-      && |  "main": "test.prog",\n|
-      && |  "man": [\n|
-      && |    "manual.md"\n|
-      && |  ],\n|
-      && |  "repository": \{\n|
-      && |    "type": "http",\n|
-      && |    "url": "https://github.com/abapPM/abapPM",\n|
-      && |    "directory": "subdir"\n|
-      && |  \},\n|
-      && |  "funding": \{\n|
-      && |    "type": "github",\n|
-      && |    "url": "https://github.com/abapPM"\n|
-      && |  \},\n|
-      && |  "dependencies": \{\n|
-      && |    "dep2": "2.0.0"\n|
-      && |  \},\n|
-      && |  "devDependencies": \{\n|
-      && |    "dep3": ">3"\n|
-      && |  \},\n|
-      && |  "optionalDependencies": \{\n|
-      && |    "dep4": "^4.1.0"\n|
-      && |  \},\n|
-      && |  "peerDependencies": \{\n|
-      && |    "dep5": "^5.0.1"\n|
-      && |  \},\n|
-      && |  "bundleDependencies": [\n|
-      && |    "dep2"\n|
-      && |  ],\n|
-      && |  "engines": \{\n|
-      && |    "abap": ">=7.50",\n|
-      && |    "apm": ">=1"\n|
-      && |  \},\n|
-      && |  "os": [\n|
-      && |    "linux"\n|
-      && |  ],\n|
-      && |  "cpu": [\n|
-      && |    "x86-64"\n|
-      && |  ],\n|
-      && |  "db": [\n|
-      && |    "hdb"\n|
-      && |  ],\n|
-      && |  "private": true,\n|
-      && |  "readme": "# Readme"\n|
-      && |\}|.
-
-    cl_abap_unit_assert=>assert_equals(
-      act = cut->get_json( abap_true )
-      exp = json ).
-
-  ENDMETHOD.
-
-  METHOD set_complete.
-
-    init_test( '$TEST' ).
-
-    DATA(json) = |\{\n|
-      && |  "name": "test",\n|
-      && |  "version": "1.0.0",\n|
-      && |  "description": "hello world",\n|
-      && |  "type": "module",\n|
-      && |  "keywords": [\n|
-      && |    "apm"\n|
-      && |  ],\n|
-      && |  "homepage": "https://abappm.com",\n|
-      && |  "bugs": \{\n|
-      && |    "url": "https://abappm.com/bugs",\n|
-      && |    "email": "support@test.com"\n|
-      && |  \},\n|
-      && |  "license": "MIT",\n|
-      && |  "author": \{\n|
-      && |    "name": "Marc",\n|
-      && |    "url": "https://abappm.com",\n|
-      && |    "email": "marc@test.com",\n|
-      && |    "avatar": "https://gravatar.com/abapPM"\n|
-      && |  \},\n|
-      && |  "contributors": [\n|
-      && |    \{\n|
-      && |      "name": "Marc",\n|
-      && |      "url": "https://abappm.com",\n|
-      && |      "email": "marc@test.com",\n|
-      && |      "avatar": "https://gravatar.com/abapPM"\n|
-      && |    \}\n|
-      && |  ],\n|
-      && |  "maintainers": [\n|
-      && |    \{\n|
-      && |      "name": "Marc",\n|
-      && |      "url": "https://abappm.com",\n|
-      && |      "email": "marc@test.com",\n|
-      && |      "avatar": "https://gravatar.com/abapPM"\n|
-      && |    \}\n|
-      && |  ],\n|
-      && |  "main": "test.prog",\n|
-      && |  "man": [\n|
-      && |    "manual.md"\n|
-      && |  ],\n|
-      && |  "repository": \{\n|
-      && |    "type": "http",\n|
-      && |    "url": "https://github.com/abapPM/abapPM",\n|
-      && |    "directory": "subdir"\n|
-      && |  \},\n|
-      && |  "funding": \{\n|
-      && |    "type": "github",\n|
-      && |    "url": "https://github.com/abapPM"\n|
-      && |  \},\n|
-      && |  "dependencies": \{\n|
-      && |    "dep2": "2.0.0"\n|
-      && |  \},\n|
-      && |  "devDependencies": \{\n|
-      && |    "dep3": ">3"\n|
-      && |  \},\n|
-      && |  "optionalDependencies": \{\n|
-      && |    "dep4": "^4.1.0"\n|
-      && |  \},\n|
-      && |  "peerDependencies": \{\n|
-      && |    "dep5": "^5.0.1"\n|
-      && |  \},\n|
-      && |  "bundleDependencies": [\n|
-      && |    "dep2"\n|
-      && |  ],\n|
-      && |  "engines": \{\n|
-      && |    "abap": ">=7.50",\n|
-      && |    "apm": ">=1"\n|
-      && |  \},\n|
-      && |  "os": [\n|
-      && |    "linux"\n|
-      && |  ],\n|
-      && |  "cpu": [\n|
-      && |    "x86-64"\n|
-      && |  ],\n|
-      && |  "db": [\n|
-      && |    "hdb"\n|
-      && |  ],\n|
-      && |  "private": true,\n|
-      && |  "readme": "# Readme"\n|
-      && |\}|.
-
-    cut->set_json( json ).
-
-    DATA(person) = VALUE zif_types=>ty_person(
-      name   = 'Marc'
-      url    = 'https://abappm.com'
-      email  = 'marc@test.com'
-      avatar = 'https://gravatar.com/abapPM' ).
-
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
-      name                 = 'test'
-      version              = '1.0.0'
-      description          = 'hello world'
-      type                 = 'module'
-      homepage             = 'https://abappm.com'
-      bugs-url             = 'https://abappm.com/bugs'
-      bugs-email           = 'support@test.com'
-      license              = 'MIT'
-      author               = person
-      main                 = 'test.prog'
-      repository-type      = 'http'
-      repository-url       = 'https://github.com/abapPM/abapPM'
-      repository-directory = 'subdir'
-      funding-type         = 'github'
-      funding-url          = 'https://github.com/abapPM'
-      readme               = '# Readme'
-      private              = abap_true ).
-
-    INSERT person INTO TABLE package_json-contributors.
-    INSERT person INTO TABLE package_json-maintainers.
-    INSERT `apm` INTO TABLE package_json-keywords.
-    INSERT `manual.md` INTO TABLE package_json-man.
-    INSERT `linux` INTO TABLE package_json-os.
-    INSERT `x86-64` INTO TABLE package_json-cpu.
-    INSERT `hdb` INTO TABLE package_json-db.
-
-    DATA(dependency) = VALUE zif_types=>ty_dependency(
-      name  = 'dep2'
-      range = '2.0.0' ).
-    INSERT dependency INTO TABLE package_json-dependencies.
-    dependency-name  = 'dep3'.
-    dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep4'.
-    dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-optional_dependencies.
-    dependency-name  = 'dep5'.
-    dependency-range = '^5.0.1'.
-    INSERT dependency INTO TABLE package_json-peer_dependencies.
-    INSERT `dep2` INTO TABLE package_json-bundle_dependencies.
-    dependency-name  = 'abap'.
-    dependency-range = '>=7.50'.
-    INSERT dependency INTO TABLE package_json-engines.
-    dependency-name  = 'apm'.
-    dependency-range = '>=1'.
-    INSERT dependency INTO TABLE package_json-engines.
-
-    cl_abap_unit_assert=>assert_equals(
-      act = cut->get( )
-      exp = package_json ).
-
-  ENDMETHOD.
-
   METHOD get_package.
 
     init_test( '$TEST,test,1.0.0' ).
@@ -510,7 +543,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
     package_json-name    = 'test-2'.
     package_json-version = '1.2.3'.
 
-    cut->set_json( |\{\n "name": "test-2",\n "version": "1.2.3"\n\}\n| ).
+    cut->set_json( |\{\n "name": "test-2",\n "version": "1.2.3"\n\}| ).
 
     test_compare(
       package_json = package_json
@@ -530,32 +563,26 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     init_test( '$TEST' ).
 
-    DATA(json) = |\{\n|
-      && |  "name": "test",\n|
-      && |  "version": "1.0.0",\n|
-      && |  "devDependencies": \{\n|
-      && |    "dep1": "2.0.0",\n|
-      && |    "dep2": ">3",\n|
-      && |    "dep3": "^4.1.0"\n|
-      && |  \}\n|
-      && |\}|.
+    DATA(json) = ``
+      && `{`
+      && `|  "name": "test",`
+      && `|  "version": "1.0.0",`
+      && `|  "devDependencies": {`
+      && `|    "dep1": "2.0.0",`
+      && `|    "dep2": ">3",`
+      && `|    "dep3": "^4.1.0"`
+      && `|  }`
+      && `|}`.
 
-    cut->set_json( json ).
+    cut->set_json( prepare_string( json ) ).
 
     DATA(package_json) = VALUE zif_types=>ty_package_json(
       name    = 'test'
-      version = '1.0.0' ).
-
-    DATA(dependency) = VALUE zif_types=>ty_dependency(
-      name  = 'dep1'
-      range = '2.0.0' ).
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep2'.
-    dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep3'.
-    dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
+      version = '1.0.0'
+      dev_dependencies = VALUE #(
+                           ( key = `dep1` range = `2.0.0` )
+                           ( key = `dep2` range = `>3` )
+                           ( key = `dep3` range = `^4.1.0` ) ) ).
 
     cl_abap_unit_assert=>assert_equals(
       act = cut->get( )
@@ -569,34 +596,106 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     DATA(package_json) = VALUE zif_types=>ty_package_json(
       name    = 'test'
-      version = '1.0.0' ).
-
-    DATA(dependency) = VALUE zif_types=>ty_dependency(
-      name  = 'dep1'
-      range = '2.0.0' ).
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep2'.
-    dependency-range = '>3'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
-    dependency-name  = 'dep3'.
-    dependency-range = '^4.1.0'.
-    INSERT dependency INTO TABLE package_json-dev_dependencies.
+      version = '1.0.0'
+      dev_dependencies = VALUE #(
+                           ( key = `dep1` range = `2.0.0` )
+                           ( key = `dep2` range = `>3` )
+                           ( key = `dep3` range = `^4.1.0` ) ) ).
 
     cut->set( package_json ).
 
-    DATA(json) = |\{\n|
-      && |  "name": "test",\n|
-      && |  "version": "1.0.0",\n|
-      && |  "devDependencies": \{\n|
-      && |    "dep1": "2.0.0",\n|
-      && |    "dep2": ">3",\n|
-      && |    "dep3": "^4.1.0"\n|
-      && |  \}\n|
-      && |\}|.
+    DATA(json) = ``
+      && `{`
+      && `|  "name": "test",`
+      && `|  "version": "1.0.0",`
+      && `|  "devDependencies": {`
+      && `|    "dep1": "2.0.0",`
+      && `|    "dep2": ">3",`
+      && `|    "dep3": "^4.1.0"`
+      && `|  }`
+      && `|}`.
 
     cl_abap_unit_assert=>assert_equals(
       act = cut->get_json( )
-      exp = json ).
+      exp = prepare_string( json ) ).
 
   ENDMETHOD.
+
+  METHOD get_complete.
+
+    init_test( '$TEST' ).
+
+    cut->set( test_package_json ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = cut->get_json( abap_true )
+      exp = test_json ).
+
+  ENDMETHOD.
+
+  METHOD set_complete.
+
+    init_test( '$TEST' ).
+
+    cut->set_json( test_json ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = cut->get( )
+      exp = test_package_json ).
+
+  ENDMETHOD.
+
+  METHOD convert_json_to_manifest.
+
+    DATA(manifest) = zcl_package_json=>convert_json_to_manifest( test_json_full ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = manifest
+      exp = test_manifest ).
+
+  ENDMETHOD.
+
+  METHOD convert_json_to_manifest_abbr.
+
+    DATA(abbreviated) = CORRESPONDING zif_types=>ty_manifest_abbreviated(
+      zcl_package_json=>convert_json_to_manifest( test_json_abbreviated ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = abbreviated
+      exp = test_manifest_abbreviated ).
+
+  ENDMETHOD.
+
+  METHOD convert_manifest_to_json.
+
+    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = test_manifest is_complete = abap_true ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = json
+      exp = test_json_full ).
+
+  ENDMETHOD.
+
+  METHOD convert_manifest_abbr_to_json.
+
+    DATA(manifest) = CORRESPONDING zif_types=>ty_manifest( test_manifest_abbreviated ).
+
+    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = manifest is_complete = abap_false ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = json
+      exp = test_json_abbreviated ).
+
+  ENDMETHOD.
+
+  METHOD convert_manifest_to_pack_json.
+
+    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = test_manifest is_package_json = abap_true ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = json
+      exp = test_json ).
+
+  ENDMETHOD.
+
 ENDCLASS.

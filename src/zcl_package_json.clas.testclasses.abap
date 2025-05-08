@@ -354,7 +354,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
                                     shasum        = `be`
                                     unpacked_size = 2015
                                     tarball       = `test-1.0.0.tgz`
-                                    signatures    = VALUE #( ( keyid = `key` sig = `sig`) ) ).
+                                    signatures    = VALUE #( ( keyid = `key` sig = `sig` ) ) ).
     test_manifest-_id           = `test@1.0.0`.
     test_manifest-_abap_version = `7.54.0`.
     test_manifest-_apm_version  = `1.0.0`.

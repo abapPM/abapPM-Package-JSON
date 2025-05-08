@@ -39,7 +39,7 @@
       "files": "/src/**/*.*",
       "folder": "/deps8",
       "url": "https://github.com/sbcgua/ajson"
-    }m
+    },
     {
       "files": "/src/**/*.*",
       "folder": "/deps9",

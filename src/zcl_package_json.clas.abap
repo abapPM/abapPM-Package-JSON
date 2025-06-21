@@ -143,7 +143,9 @@ CLASS zcl_package_json IMPLEMENTATION.
     DATA(issues) = zcl_package_json_valid=>check( manifest ).
 
     IF issues IS NOT INITIAL.
-      zcx_error=>raise( |Invalid package json:\n{ concat_lines_of( table = issues sep = |\n| ) }| ).
+      RAISE EXCEPTION TYPE zcx_error_text
+        EXPORTING
+          text = |Invalid package json:\n{ concat_lines_of( table = issues sep = |\n| ) }|.
     ENDIF.
 
   ENDMETHOD.
@@ -159,7 +161,9 @@ CLASS zcl_package_json IMPLEMENTATION.
   METHOD constructor.
 
     IF zcl_package_json_valid=>is_valid_sap_package( package ) = abap_false.
-      zcx_error=>raise( |Invalid package: { package }| ).
+      RAISE EXCEPTION TYPE zcx_error_text
+        EXPORTING
+          text = |Invalid package: { package }|.
     ENDIF.
 
     me->package      = package.
@@ -268,7 +272,7 @@ CLASS zcl_package_json IMPLEMENTATION.
         result = sort_manifest( manifest ).
 
       CATCH zcx_ajson_error INTO DATA(error).
-        zcx_error=>raise_with_text( error ).
+        RAISE EXCEPTION TYPE zcx_error_prev EXPORTING previous = error.
     ENDTRY.
 
   ENDMETHOD.
@@ -358,7 +362,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
         result = ajson->stringify( 2 ).
       CATCH zcx_ajson_error INTO DATA(error).
-        zcx_error=>raise_with_text( error ).
+        RAISE EXCEPTION TYPE zcx_error_prev EXPORTING previous = error.
     ENDTRY.
 
   ENDMETHOD.

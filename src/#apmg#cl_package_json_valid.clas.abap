@@ -1,4 +1,4 @@
-CLASS zcl_package_json_valid DEFINITION
+CLASS /apmg/cl_package_json_valid DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC.
@@ -13,95 +13,81 @@ CLASS zcl_package_json_valid DEFINITION
 
     CLASS-METHODS check
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
-
     CLASS-METHODS is_valid_package_type
       IMPORTING
         !type         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_sap_package
       IMPORTING
         !package      TYPE devclass
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_name
       IMPORTING
         !name         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_scoped_name
       IMPORTING
         !name         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_version
       IMPORTING
         !version      TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_version_range
       IMPORTING
         !range        TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_email
       IMPORTING
         !email        TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_url
       IMPORTING
         !url          TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_engine
       IMPORTING
         !engine       TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_os
       IMPORTING
         !os           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_cpu
       IMPORTING
         !cpu          TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_db
       IMPORTING
         !db           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS is_valid_timestamp
       IMPORTING
         !timestamp    TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
-
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
 
 
 
-CLASS zcl_package_json_valid IMPLEMENTATION.
+CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
 
   METHOD check.
@@ -130,9 +116,9 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       cpu_val IS INITIAL OR
-      cpu_val = zif_types=>c_cpu-x86_64 OR
-      cpu_val = zif_types=>c_cpu-power_pc OR
-      cpu_val = zif_types=>c_cpu-sparc ).
+      cpu_val = /apmg/if_types=>c_cpu-x86_64 OR
+      cpu_val = /apmg/if_types=>c_cpu-power_pc OR
+      cpu_val = /apmg/if_types=>c_cpu-sparc ).
 
   ENDMETHOD.
 
@@ -145,15 +131,15 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       db_val IS INITIAL OR
-      db_val = zif_types=>c_db-db2 OR
-      db_val = zif_types=>c_db-db400 OR
-      db_val = zif_types=>c_db-db6 OR
-      db_val = zif_types=>c_db-hdb OR
-      db_val = zif_types=>c_db-informix OR
-      db_val = zif_types=>c_db-mssql OR
-      db_val = zif_types=>c_db-oracle OR
-      db_val = zif_types=>c_db-sap_db OR
-      db_val = zif_types=>c_db-sybase ).
+      db_val = /apmg/if_types=>c_db-db2 OR
+      db_val = /apmg/if_types=>c_db-db400 OR
+      db_val = /apmg/if_types=>c_db-db6 OR
+      db_val = /apmg/if_types=>c_db-hdb OR
+      db_val = /apmg/if_types=>c_db-informix OR
+      db_val = /apmg/if_types=>c_db-mssql OR
+      db_val = /apmg/if_types=>c_db-oracle OR
+      db_val = /apmg/if_types=>c_db-sap_db OR
+      db_val = /apmg/if_types=>c_db-sybase ).
 
   ENDMETHOD.
 
@@ -178,8 +164,8 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       engine IS INITIAL OR
-      engine = zif_types=>c_engine-abap OR
-      engine = zif_types=>c_engine-apm ).
+      engine = /apmg/if_types=>c_engine-abap OR
+      engine = /apmg/if_types=>c_engine-apm ).
 
   ENDMETHOD.
 
@@ -188,10 +174,10 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     " https://www.npmjs.com/package/validate-npm-package-name
     IF strlen( name )
-      BETWEEN zif_types=>c_package_name-min_length
-          AND zif_types=>c_package_name-max_length.
+      BETWEEN /apmg/if_types=>c_package_name-min_length
+          AND /apmg/if_types=>c_package_name-max_length.
 
-      FIND REGEX zif_types=>c_package_name-regex IN name RESPECTING CASE.
+      FIND REGEX /apmg/if_types=>c_package_name-regex IN name RESPECTING CASE.
       result = xsdbool( sy-subrc = 0 ).
     ELSE.
       result = abap_false.
@@ -208,13 +194,13 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       os_val IS INITIAL OR
-      os_val = zif_types=>c_os-aix OR
-      os_val = zif_types=>c_os-hp_ux OR
-      os_val = zif_types=>c_os-linux OR
-      os_val = zif_types=>c_os-ms_windows OR
-      os_val = zif_types=>c_os-os_390 OR
-      os_val = zif_types=>c_os-os_400 OR
-      os_val = zif_types=>c_os-solaris ).
+      os_val = /apmg/if_types=>c_os-aix OR
+      os_val = /apmg/if_types=>c_os-hp_ux OR
+      os_val = /apmg/if_types=>c_os-linux OR
+      os_val = /apmg/if_types=>c_os-ms_windows OR
+      os_val = /apmg/if_types=>c_os-os_390 OR
+      os_val = /apmg/if_types=>c_os-os_400 OR
+      os_val = /apmg/if_types=>c_os-solaris ).
 
   ENDMETHOD.
 
@@ -223,8 +209,8 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       type IS INITIAL OR
-      type = zif_types=>c_package_type-common_abap OR
-      type = zif_types=>c_package_type-module ).
+      type = /apmg/if_types=>c_package_type-common_abap OR
+      type = /apmg/if_types=>c_package_type-module ).
 
   ENDMETHOD.
 
@@ -267,10 +253,10 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     TRY.
         IF url IS NOT INITIAL.
-          zcl_url=>parse( url ).
+          /apmg/cl_url=>parse( url ).
         ENDIF.
         result = abap_true.
-      CATCH zcx_error.
+      CATCH /apmg/cx_error.
         result = abap_false.
     ENDTRY.
 
@@ -281,9 +267,9 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     " Check if it is a semantic version
     TRY.
-        zcl_semver=>create( version ).
+        /apmg/cl_semver=>create( version ).
         result = abap_true.
-      CATCH zcx_error.
+      CATCH /apmg/cx_error.
         result = abap_false.
     ENDTRY.
 
@@ -294,9 +280,9 @@ CLASS zcl_package_json_valid IMPLEMENTATION.
 
     " Check if it is a semantic version range
     TRY.
-        zcl_semver_range=>create( range ).
+        /apmg/cl_semver_range=>create( range ).
         result = abap_true.
-      CATCH zcx_error.
+      CATCH /apmg/cx_error.
         result = abap_false.
     ENDTRY.
 

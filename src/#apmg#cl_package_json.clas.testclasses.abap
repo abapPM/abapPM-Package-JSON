@@ -4,10 +4,10 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
   PRIVATE SECTION.
 
     DATA:
-      cut                       TYPE REF TO zif_package_json,
-      test_package_json         TYPE zif_types=>ty_package_json,
-      test_manifest             TYPE zif_types=>ty_manifest,
-      test_manifest_abbreviated TYPE zif_types=>ty_manifest_abbreviated,
+      cut                       TYPE REF TO /apmg/if_package_json,
+      test_package_json         TYPE /apmg/if_types=>ty_package_json,
+      test_manifest             TYPE /apmg/if_types=>ty_manifest,
+      test_manifest_abbreviated TYPE /apmg/if_types=>ty_manifest_abbreviated,
       test_json                 TYPE string,
       test_json_full            TYPE string,
       test_json_abbreviated     TYPE string.
@@ -24,7 +24,7 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
       IMPORTING
         args TYPE string
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     METHODS test_valid
       IMPORTING
@@ -36,31 +36,31 @@ CLASS ltcl_package_json DEFINITION FOR TESTING RISK LEVEL HARMLESS
 
     METHODS test_compare
       IMPORTING
-        package_json TYPE zif_types=>ty_package_json
+        package_json TYPE /apmg/if_types=>ty_package_json
         json_data    TYPE string
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     METHODS:
       valid_packages FOR TESTING,
       invalid_packages FOR TESTING,
-      get_package FOR TESTING RAISING zcx_error,
-      set_package FOR TESTING RAISING zcx_error,
-      get_persons FOR TESTING RAISING zcx_error,
-      set_persons FOR TESTING RAISING zcx_error,
-      dependencies_json_to_abap FOR TESTING RAISING zcx_error,
-      dependencies_abap_to_json FOR TESTING RAISING zcx_error,
-      get_complete FOR TESTING RAISING zcx_error,
-      set_complete FOR TESTING RAISING zcx_error,
-      convert_json_to_manifest FOR TESTING RAISING zcx_error,
-      convert_json_to_manifest_abbr FOR TESTING RAISING zcx_error,
-      convert_manifest_to_json FOR TESTING RAISING zcx_error,
-      convert_manifest_abbr_to_json FOR TESTING RAISING zcx_error,
-      convert_manifest_to_pack_json FOR TESTING RAISING zcx_error.
+      get_package FOR TESTING RAISING /apmg/cx_error,
+      set_package FOR TESTING RAISING /apmg/cx_error,
+      get_persons FOR TESTING RAISING /apmg/cx_error,
+      set_persons FOR TESTING RAISING /apmg/cx_error,
+      dependencies_json_to_abap FOR TESTING RAISING /apmg/cx_error,
+      dependencies_abap_to_json FOR TESTING RAISING /apmg/cx_error,
+      get_complete FOR TESTING RAISING /apmg/cx_error,
+      set_complete FOR TESTING RAISING /apmg/cx_error,
+      convert_json_to_manifest FOR TESTING RAISING /apmg/cx_error,
+      convert_json_to_manifest_abbr FOR TESTING RAISING /apmg/cx_error,
+      convert_manifest_to_json FOR TESTING RAISING /apmg/cx_error,
+      convert_manifest_abbr_to_json FOR TESTING RAISING /apmg/cx_error,
+      convert_manifest_to_pack_json FOR TESTING RAISING /apmg/cx_error.
 
 ENDCLASS.
 
-CLASS zcl_package_json DEFINITION LOCAL FRIENDS ltcl_package_json.
+CLASS /apmg/cl_package_json DEFINITION LOCAL FRIENDS ltcl_package_json.
 
 CLASS ltcl_package_json IMPLEMENTATION.
 
@@ -301,7 +301,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
     test_json_full        = prepare_string( test_json_full ).
     test_json_abbreviated = prepare_string( test_json_abbreviated ).
 
-    DATA(person) = VALUE zif_types=>ty_person(
+    DATA(person) = VALUE /apmg/if_types=>ty_person(
       name   = `Marc`
       url    = `https://abappm.com`
       email  = `marc@test.com`
@@ -377,7 +377,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     SPLIT args AT ',' INTO DATA(package) DATA(name) DATA(version) DATA(private).
 
-    cut = NEW zcl_package_json(
+    cut = NEW /apmg/cl_package_json(
       package = CONV devclass( package )
       name    = name
       version = version
@@ -392,7 +392,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
         IF cut->is_valid( ) = abap_false.
           cl_abap_unit_assert=>fail( |Invalid but expected valid: { args }| ).
         ENDIF.
-      CATCH zcx_error INTO DATA(error).
+      CATCH /apmg/cx_error INTO DATA(error).
         cl_abap_unit_assert=>fail( error->get_text( ) ).
     ENDTRY.
 
@@ -405,7 +405,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
         IF cut->is_valid( ) = abap_true.
           cl_abap_unit_assert=>fail( |Valid but expected invalid: { args }| ).
         ENDIF.
-      CATCH zcx_error.
+      CATCH /apmg/cx_error.
     ENDTRY.
 
   ENDMETHOD.
@@ -478,7 +478,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     init_test( '$TEST,test,1.0.0' ).
 
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
+    DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
       name    = 'test'
       version = '1.0.0' ).
 
@@ -513,7 +513,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     init_test( '$TEST' ).
 
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
+    DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
       name    = 'test'
       version = '1.0.0'
       private = abap_true ).
@@ -576,7 +576,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     cut->set_json( prepare_string( json ) ).
 
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
+    DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
       name    = 'test'
       version = '1.0.0'
       dev_dependencies = VALUE #(
@@ -594,7 +594,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     init_test( '$TEST' ).
 
-    DATA(package_json) = VALUE zif_types=>ty_package_json(
+    DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
       name    = 'test'
       version = '1.0.0'
       dev_dependencies = VALUE #(
@@ -647,7 +647,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_json_to_manifest.
 
-    DATA(manifest) = zcl_package_json=>convert_json_to_manifest( test_json_full ).
+    DATA(manifest) = /apmg/cl_package_json=>convert_json_to_manifest( test_json_full ).
 
     cl_abap_unit_assert=>assert_equals(
       act = manifest
@@ -657,8 +657,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_json_to_manifest_abbr.
 
-    DATA(abbreviated) = CORRESPONDING zif_types=>ty_manifest_abbreviated(
-      zcl_package_json=>convert_json_to_manifest( test_json_abbreviated ) ).
+    DATA(abbreviated) = CORRESPONDING /apmg/if_types=>ty_manifest_abbreviated(
+      /apmg/cl_package_json=>convert_json_to_manifest( test_json_abbreviated ) ).
 
     cl_abap_unit_assert=>assert_equals(
       act = abbreviated
@@ -668,7 +668,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_manifest_to_json.
 
-    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = test_manifest is_complete = abap_true ).
+    DATA(json) = /apmg/cl_package_json=>convert_manifest_to_json( manifest = test_manifest is_complete = abap_true ).
 
     cl_abap_unit_assert=>assert_equals(
       act = json
@@ -678,9 +678,9 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_manifest_abbr_to_json.
 
-    DATA(manifest) = CORRESPONDING zif_types=>ty_manifest( test_manifest_abbreviated ).
+    DATA(manifest) = CORRESPONDING /apmg/if_types=>ty_manifest( test_manifest_abbreviated ).
 
-    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = manifest is_complete = abap_false ).
+    DATA(json) = /apmg/cl_package_json=>convert_manifest_to_json( manifest = manifest is_complete = abap_false ).
 
     cl_abap_unit_assert=>assert_equals(
       act = json
@@ -690,7 +690,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_manifest_to_pack_json.
 
-    DATA(json) = zcl_package_json=>convert_manifest_to_json( manifest = test_manifest is_package_json = abap_true ).
+    DATA(json) = /apmg/cl_package_json=>convert_manifest_to_json( manifest = test_manifest is_package_json = abap_true ).
 
     cl_abap_unit_assert=>assert_equals(
       act = json

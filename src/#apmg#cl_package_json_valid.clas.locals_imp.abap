@@ -4,31 +4,31 @@ CLASS lcl_validate DEFINITION.
 
     CLASS-METHODS validate_single_values
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
     CLASS-METHODS validate_persons
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
     CLASS-METHODS validate_arrays
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
     CLASS-METHODS validate_engines
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
     CLASS-METHODS validate_dependencies
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
 
@@ -38,15 +38,15 @@ CLASS lcl_validate IMPLEMENTATION.
 
   METHOD validate_single_values.
 
-    IF zcl_package_json_valid=>is_valid_name( manifest-name ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_name( manifest-name ) = abap_false.
       INSERT |Invalid name: { manifest-name }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_version( manifest-version ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_version( manifest-version ) = abap_false.
       INSERT |Invalid version: { manifest-version }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_package_type( manifest-type ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_package_type( manifest-type ) = abap_false.
       INSERT |Invalid package type: { manifest-type }| INTO TABLE result.
     ENDIF.
 
@@ -58,21 +58,21 @@ CLASS lcl_validate IMPLEMENTATION.
       INSERT |Invalid deprecated flag: { manifest-deprecated }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_url( manifest-homepage ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_url( manifest-homepage ) = abap_false.
       INSERT |Invalid homepage URL: { manifest-homepage }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_email( manifest-bugs-email ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_email( manifest-bugs-email ) = abap_false.
       INSERT |Invalid bugs email: { manifest-bugs-email }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_url( manifest-bugs-url ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_url( manifest-bugs-url ) = abap_false.
       INSERT |Invalid bugs URL: { manifest-bugs-url }| INTO TABLE result.
     ENDIF.
 
     " This should not be a URL to an html project page that you put in your browser. It's for computers.
     " Example: git+https://github.com/abapPM/abapPM.git
-    IF zcl_package_json_valid=>is_valid_url( manifest-repository-url ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_url( manifest-repository-url ) = abap_false.
       INSERT |Invalid repository URL: { manifest-repository-url }| INTO TABLE result.
     ENDIF.
 
@@ -82,21 +82,21 @@ CLASS lcl_validate IMPLEMENTATION.
 
     DATA values TYPE string_table.
 
-    IF zcl_package_json_valid=>is_valid_email( manifest-author-email ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_email( manifest-author-email ) = abap_false.
       INSERT |Invalid author email: { manifest-author-email }| INTO TABLE result.
     ENDIF.
 
-    IF zcl_package_json_valid=>is_valid_url( manifest-author-url ) = abap_false.
+    IF /apmg/cl_package_json_valid=>is_valid_url( manifest-author-url ) = abap_false.
       INSERT |Invalid author URL: { manifest-author-url }| INTO TABLE result.
     ENDIF.
 
     CLEAR values.
     LOOP AT manifest-contributors INTO DATA(person).
       COLLECT person-name INTO values.
-      IF zcl_package_json_valid=>is_valid_email( person-email ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_email( person-email ) = abap_false.
         INSERT |Invalid contributor email: { person-name } { person-email }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_url( person-url ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_url( person-url ) = abap_false.
         INSERT |Invalid contributor URL: { person-name } { person-url }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -107,10 +107,10 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-maintainers INTO person.
       COLLECT person-name INTO values.
-      IF zcl_package_json_valid=>is_valid_email( person-email ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_email( person-email ) = abap_false.
         INSERT |Invalid maintainer email: { person-name } { person-email }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_url( person-url ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_url( person-url ) = abap_false.
         INSERT |Invalid maintainer URL: { person-name } { person-url }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -127,7 +127,7 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-cpu INTO DATA(value).
       COLLECT value INTO values.
-      IF zcl_package_json_valid=>is_valid_cpu( value ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_cpu( value ) = abap_false.
         INSERT |Invalid CPU: { value }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -138,7 +138,7 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-db INTO value.
       COLLECT value INTO values.
-      IF zcl_package_json_valid=>is_valid_db( value ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_db( value ) = abap_false.
         INSERT |Invalid database: { value }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -149,7 +149,7 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-os INTO value.
       COLLECT value INTO values.
-      IF zcl_package_json_valid=>is_valid_os( value ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_os( value ) = abap_false.
         INSERT |Invalid operating system: { value }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -166,10 +166,10 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-engines INTO DATA(dependency).
       COLLECT dependency-key INTO values.
-      IF zcl_package_json_valid=>is_valid_engine( dependency-key ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_engine( dependency-key ) = abap_false.
         INSERT |Invalid engine: { dependency-key }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
         INSERT |Invalid engine version: { dependency-key } { dependency-range }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -186,10 +186,10 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-dependencies INTO DATA(dependency).
       COLLECT dependency-key INTO values.
-      IF zcl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
         INSERT |Invalid dependency: { dependency-key }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
         INSERT |Invalid dependency version: { dependency-key } { dependency-range }| INTO TABLE result.
       ENDIF.
     ENDLOOP.
@@ -200,10 +200,10 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-dev_dependencies INTO dependency.
       COLLECT dependency-key INTO values.
-      IF zcl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
         INSERT |Invalid dev dependency: { dependency-key }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
         INSERT |Invalid dev dependency version: { dependency-key } { dependency-range }| INTO TABLE result.
       ENDIF.
       IF line_exists( manifest-dependencies[ key = dependency-key ] ).
@@ -217,10 +217,10 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-optional_dependencies INTO dependency.
       COLLECT dependency-key INTO values.
-      IF zcl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_name( dependency-key ) = abap_false.
         INSERT |Invalid optional dependency: { dependency-key }| INTO TABLE result.
       ENDIF.
-      IF zcl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_version_range( dependency-range ) = abap_false.
         INSERT |Invalid optional dependency version: { dependency-key } { dependency-range }| INTO TABLE result.
       ENDIF.
       IF line_exists( manifest-dependencies[ key = dependency-key ] ).
@@ -237,7 +237,7 @@ CLASS lcl_validate IMPLEMENTATION.
     CLEAR values.
     LOOP AT manifest-bundle_dependencies INTO DATA(value).
       COLLECT value INTO values.
-      IF zcl_package_json_valid=>is_valid_name( value ) = abap_false.
+      IF /apmg/cl_package_json_valid=>is_valid_name( value ) = abap_false.
         INSERT |Invalid bundle dependency: { value }| INTO TABLE result.
       ENDIF.
       IF NOT line_exists( manifest-dependencies[ key = value ] ).

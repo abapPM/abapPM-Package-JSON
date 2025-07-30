@@ -690,7 +690,9 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
   METHOD convert_manifest_to_pack_json.
 
-    DATA(json) = /apmg/cl_package_json=>convert_manifest_to_json( manifest = test_manifest is_package_json = abap_true ).
+    DATA(json) = /apmg/cl_package_json=>convert_manifest_to_json(
+      manifest        = test_manifest
+      is_package_json = abap_true ).
 
     cl_abap_unit_assert=>assert_equals(
       act = json

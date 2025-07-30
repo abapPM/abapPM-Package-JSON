@@ -72,6 +72,7 @@
         "CLAS",
         "DEVC",
         "INTF",
+        "NSPC",
         "PROG"
       ]
     },
@@ -215,7 +216,7 @@
       "aqqu": "^Z",
       "aqsg": "^Z",
       "auth": "^Z",
-      "clas": "^ZC(L|X)\\_PACKAGE_JSON",
+      "clas": "^/APMG/C(L|X)_PACKAGE_JSON",
       "cmod": "^Z",
       "doma": "^Z",
       "dtel": "^Z",
@@ -227,11 +228,11 @@
       "idoc": "^Z",
       "ignoreNames": [],
       "ignorePatterns": [],
-      "intf": "^ZIF\\_PACKAGE_JSON",
+      "intf": "^/APMG/IF_PACKAGE_JSON",
       "msag": "^Z",
       "patternKind": "required",
       "pinf": "^Z",
-      "prog": "^Z",
+      "prog": "^/APMG/PACKAGE_JSON",
       "sfpf": "^Z",
       "sfpi": "^Z",
       "shlp": "^Z",
@@ -314,7 +315,7 @@
     "xml_consistency": true
   },
   "syntax": {
-    "errorNamespace": "^(Z|Y|LCL_|TY_|LIF_)",
+    "errorNamespace": "^(/APMG/|LCL_|TY_|LIF_)",
     "globalConstants": [],
     "globalMacros": [],
     "version": "v750"

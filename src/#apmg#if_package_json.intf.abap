@@ -1,4 +1,4 @@
-INTERFACE zif_package_json PUBLIC.
+INTERFACE /apmg/if_package_json PUBLIC.
 
 ************************************************************************
 * Package JSON
@@ -13,11 +13,11 @@ INTERFACE zif_package_json PUBLIC.
 
   CONSTANTS c_version TYPE string VALUE '1.0.0' ##NEEDED.
 
-  INTERFACES zif_types.
+  INTERFACES /apmg/if_types.
 
   TYPES:
     BEGIN OF ty_package,
-      key             TYPE zif_persist_apm=>ty_key,
+      key             TYPE /apmg/if_persist_apm=>ty_key,
       package         TYPE devclass,
       name            TYPE string,
       version         TYPE string,
@@ -32,7 +32,7 @@ INTERFACE zif_package_json PUBLIC.
       favorite        TYPE abap_bool, " settings
       write_protected TYPE abap_bool, " settings
       labels          TYPE string_table, " settings
-      instance        TYPE REF TO zif_package_json,
+      instance        TYPE REF TO /apmg/if_package_json,
     END OF ty_package,
     ty_packages TYPE STANDARD TABLE OF ty_package
       WITH NON-UNIQUE KEY primary_key COMPONENTS key
@@ -41,7 +41,7 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS get
     RETURNING
-      VALUE(result) TYPE zif_types=>ty_package_json.
+      VALUE(result) TYPE /apmg/if_types=>ty_package_json.
 
   METHODS get_json
     IMPORTING
@@ -49,23 +49,23 @@ INTERFACE zif_package_json PUBLIC.
     RETURNING
       VALUE(result) TYPE string
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS set
     IMPORTING
-      !package_json TYPE zif_types=>ty_package_json
+      !package_json TYPE /apmg/if_types=>ty_package_json
     RETURNING
-      VALUE(result) TYPE REF TO zif_package_json
+      VALUE(result) TYPE REF TO /apmg/if_package_json
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS set_json
     IMPORTING
       !json         TYPE string
     RETURNING
-      VALUE(result) TYPE REF TO zif_package_json
+      VALUE(result) TYPE REF TO /apmg/if_package_json
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS exists
     RETURNING
@@ -73,17 +73,17 @@ INTERFACE zif_package_json PUBLIC.
 
   METHODS load
     RETURNING
-      VALUE(result) TYPE REF TO zif_package_json
+      VALUE(result) TYPE REF TO /apmg/if_package_json
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS save
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS delete
     RAISING
-      zcx_error.
+      /apmg/cx_error.
 
   METHODS is_valid
     RETURNING

@@ -1,4 +1,4 @@
-CLASS zcl_package_json DEFINITION
+CLASS /apmg/cl_package_json DEFINITION
   PUBLIC
   FINAL
   CREATE PRIVATE.
@@ -11,7 +11,9 @@ CLASS zcl_package_json DEFINITION
 ************************************************************************
   PUBLIC SECTION.
 
-    INTERFACES zif_package_json.
+    INTERFACES:
+      /apmg/if_types,
+      /apmg/if_package_json.
 
     CLASS-METHODS class_constructor.
 
@@ -22,14 +24,14 @@ CLASS zcl_package_json DEFINITION
         !version      TYPE string OPTIONAL
         !private      TYPE abap_bool DEFAULT abap_false
       RETURNING
-        VALUE(result) TYPE REF TO zif_package_json
+        VALUE(result) TYPE REF TO /apmg/if_package_json
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     CLASS-METHODS injector
       IMPORTING
         !package TYPE devclass
-        !mock    TYPE REF TO zif_package_json.
+        !mock    TYPE REF TO /apmg/if_package_json.
 
     METHODS constructor
       IMPORTING
@@ -38,7 +40,7 @@ CLASS zcl_package_json DEFINITION
         !version TYPE string OPTIONAL
         !private TYPE abap_bool DEFAULT abap_false
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     CLASS-METHODS list
       IMPORTING
@@ -46,17 +48,17 @@ CLASS zcl_package_json DEFINITION
         !instanciate  TYPE abap_bool DEFAULT abap_false
         !is_bundle    TYPE abap_bool DEFAULT abap_undefined
       RETURNING
-        VALUE(result) TYPE zif_package_json=>ty_packages.
+        VALUE(result) TYPE /apmg/if_package_json=>ty_packages.
 
     CLASS-METHODS get_package_key
       IMPORTING
         !package      TYPE devclass
       RETURNING
-        VALUE(result) TYPE zif_persist_apm=>ty_key.
+        VALUE(result) TYPE /apmg/if_persist_apm=>ty_key.
 
     CLASS-METHODS get_package_from_key
       IMPORTING
-        !key          TYPE zif_persist_apm=>ty_key
+        !key          TYPE /apmg/if_persist_apm=>ty_key
       RETURNING
         VALUE(result) TYPE devclass.
 
@@ -64,27 +66,27 @@ CLASS zcl_package_json DEFINITION
       IMPORTING
         !json         TYPE string
       RETURNING
-        VALUE(result) TYPE zif_types=>ty_manifest
+        VALUE(result) TYPE /apmg/if_types=>ty_manifest
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     CLASS-METHODS convert_json_to_manifest_abbr
       IMPORTING
         !json         TYPE string
       RETURNING
-        VALUE(result) TYPE zif_types=>ty_manifest_abbreviated
+        VALUE(result) TYPE /apmg/if_types=>ty_manifest_abbreviated
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     CLASS-METHODS convert_manifest_to_json
       IMPORTING
-        !manifest        TYPE zif_types=>ty_manifest
+        !manifest        TYPE /apmg/if_types=>ty_manifest
         !is_package_json TYPE abap_bool DEFAULT abap_false
         !is_complete     TYPE abap_bool DEFAULT abap_false
       RETURNING
         VALUE(result)    TYPE string
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -92,32 +94,32 @@ CLASS zcl_package_json DEFINITION
     TYPES:
       BEGIN OF ty_instance,
         package  TYPE devclass,
-        instance TYPE REF TO zif_package_json,
+        instance TYPE REF TO /apmg/if_package_json,
       END OF ty_instance,
       ty_instances TYPE HASHED TABLE OF ty_instance WITH UNIQUE KEY package.
 
     TYPES ty_package_list TYPE STANDARD TABLE OF devclass WITH KEY table_line.
 
     CLASS-DATA:
-      db_persist TYPE REF TO zif_persist_apm,
+      db_persist TYPE REF TO /apmg/if_persist_apm,
       instances  TYPE ty_instances.
 
     DATA:
-      key      TYPE zif_persist_apm=>ty_key,
+      key      TYPE /apmg/if_persist_apm=>ty_key,
       package  TYPE devclass,
-      manifest TYPE zif_types=>ty_manifest.
+      manifest TYPE /apmg/if_types=>ty_manifest.
 
     CLASS-METHODS check_manifest
       IMPORTING
-        !manifest TYPE zif_types=>ty_manifest
+        !manifest TYPE /apmg/if_types=>ty_manifest
       RAISING
-        zcx_error.
+        /apmg/cx_error.
 
     CLASS-METHODS sort_manifest
       IMPORTING
-        !manifest     TYPE zif_types=>ty_manifest
+        !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
-        VALUE(result) TYPE zif_types=>ty_manifest.
+        VALUE(result) TYPE /apmg/if_types=>ty_manifest.
 
     CLASS-METHODS replace_slash
       IMPORTING
@@ -135,15 +137,98 @@ ENDCLASS.
 
 
 
-CLASS zcl_package_json IMPLEMENTATION.
+CLASS /apmg/cl_package_json IMPLEMENTATION.
+
+
+  METHOD /apmg/if_package_json~delete.
+
+    db_persist->delete( key ).
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~exists.
+
+    TRY.
+        db_persist->load( key ).
+        result = abap_true.
+      CATCH /apmg/cx_error.
+        result = abap_false.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~get.
+
+    result = CORRESPONDING #( manifest ).
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~get_json.
+
+    result = convert_manifest_to_json(
+      manifest        = manifest
+      is_package_json = abap_true
+      is_complete     = is_complete ).
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~is_valid.
+
+    TRY.
+        result = xsdbool( /apmg/cl_package_json_valid=>check( manifest ) IS INITIAL ).
+      CATCH /apmg/cx_error.
+        result = abap_false.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~load.
+
+    /apmg/if_package_json~set_json( db_persist->load( key )-value ).
+    result = me.
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~save.
+
+    check_manifest( manifest ).
+    db_persist->save(
+      key   = key
+      value = /apmg/if_package_json~get_json( ) ).
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~set.
+
+    manifest = CORRESPONDING #( package_json ).
+    check_manifest( manifest ).
+    manifest = sort_manifest( manifest ).
+    result   = me.
+
+  ENDMETHOD.
+
+
+  METHOD /apmg/if_package_json~set_json.
+
+    manifest = convert_json_to_manifest( json ).
+    result   = me.
+
+  ENDMETHOD.
 
 
   METHOD check_manifest.
 
-    DATA(issues) = zcl_package_json_valid=>check( manifest ).
+    DATA(issues) = /apmg/cl_package_json_valid=>check( manifest ).
 
     IF issues IS NOT INITIAL.
-      RAISE EXCEPTION TYPE zcx_error_text
+      RAISE EXCEPTION TYPE /apmg/cx_error_text
         EXPORTING
           text = |Invalid package json:\n{ concat_lines_of( table = issues sep = |\n| ) }|.
     ENDIF.
@@ -153,15 +238,15 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD class_constructor.
 
-    db_persist = zcl_persist_apm=>get_instance( ).
+    db_persist = /apmg/cl_persist_apm=>get_instance( ).
 
   ENDMETHOD.
 
 
   METHOD constructor.
 
-    IF zcl_package_json_valid=>is_valid_sap_package( package ) = abap_false.
-      RAISE EXCEPTION TYPE zcx_error_text
+    IF /apmg/cl_package_json_valid=>is_valid_sap_package( package ) = abap_false.
+      RAISE EXCEPTION TYPE /apmg/cx_error_text
         EXPORTING
           text = |Invalid package: { package }|.
     ENDIF.
@@ -174,8 +259,8 @@ CLASS zcl_package_json IMPLEMENTATION.
     key = get_package_key( package ).
 
     TRY.
-        zif_package_json~load( ).
-      CATCH zcx_error ##NO_HANDLER.
+        /apmg/if_package_json~load( ).
+      CATCH /apmg/cx_error ##NO_HANDLER.
     ENDTRY.
 
   ENDMETHOD.
@@ -196,31 +281,31 @@ CLASS zcl_package_json IMPLEMENTATION.
         homepage      TYPE string,
         icon          TYPE string,
         BEGIN OF bugs,
-          url   TYPE zif_types=>ty_uri,
-          email TYPE zif_types=>ty_email,
+          url   TYPE /apmg/if_types=>ty_uri,
+          email TYPE /apmg/if_types=>ty_email,
         END OF bugs,
         license       TYPE string,
-        author        TYPE zif_types=>ty_person,
-        contributors  TYPE STANDARD TABLE OF zif_types=>ty_person WITH KEY name,
-        maintainers   TYPE STANDARD TABLE OF zif_types=>ty_person WITH KEY name,
+        author        TYPE /apmg/if_types=>ty_person,
+        contributors  TYPE STANDARD TABLE OF /apmg/if_types=>ty_person WITH KEY name,
+        maintainers   TYPE STANDARD TABLE OF /apmg/if_types=>ty_person WITH KEY name,
         main          TYPE string,
         man           TYPE string_table,
         type          TYPE string,
         BEGIN OF repository,
           type      TYPE string,
-          url       TYPE zif_types=>ty_uri,
+          url       TYPE /apmg/if_types=>ty_uri,
           directory TYPE string,
         END OF repository,
         BEGIN OF funding,
           type TYPE string,
-          url  TYPE zif_types=>ty_uri,
+          url  TYPE /apmg/if_types=>ty_uri,
         END OF funding,
         os            TYPE string_table,
         cpu           TYPE string_table,
         db            TYPE string_table,
         private       TYPE abap_bool,
         deprecated    TYPE abap_bool,
-        dist          TYPE zif_types=>ty_dist,
+        dist          TYPE /apmg/if_types=>ty_dist,
         readme        TYPE string,
         _id           TYPE string,
         _abap_version TYPE string,
@@ -229,16 +314,16 @@ CLASS zcl_package_json IMPLEMENTATION.
 
     DATA:
       manifest_partial TYPE ty_manifest_partial,
-      dependency       TYPE zif_types=>ty_dependency.
+      dependency       TYPE /apmg/if_types=>ty_dependency.
 
     TRY.
         DATA(ajson) = zcl_ajson=>parse( json
           )->to_abap_corresponding_only(
-          )->map( zcl_ajson_extensions=>from_camel_case_underscore( ) ).
+          )->map( /apmg/cl_ajson_extensions=>from_camel_case_underscore( ) ).
 
         ajson->to_abap( IMPORTING ev_container = manifest_partial ).
 
-        DATA(manifest) = CORRESPONDING zif_types=>ty_manifest( manifest_partial ).
+        DATA(manifest) = CORRESPONDING /apmg/if_types=>ty_manifest( manifest_partial ).
 
         " Transpose dependencies
         LOOP AT ajson->members( '/dependencies' ) INTO dependency-key.
@@ -272,7 +357,7 @@ CLASS zcl_package_json IMPLEMENTATION.
         result = sort_manifest( manifest ).
 
       CATCH zcx_ajson_error INTO DATA(error).
-        RAISE EXCEPTION TYPE zcx_error_prev EXPORTING previous = error.
+        RAISE EXCEPTION TYPE /apmg/cx_error_prev EXPORTING previous = error.
     ENDTRY.
 
   ENDMETHOD.
@@ -296,7 +381,7 @@ CLASS zcl_package_json IMPLEMENTATION.
           )->set(
             iv_path = '/'
             iv_val  = manifest
-          )->map( zcl_ajson_extensions=>to_camel_case_underscore( ) ).
+          )->map( /apmg/cl_ajson_extensions=>to_camel_case_underscore( ) ).
 
         " Transpose dependencies
         ajson->setx( '/dependencies:{ }' ).
@@ -335,7 +420,7 @@ CLASS zcl_package_json IMPLEMENTATION.
         ENDLOOP.
 
         IF is_complete = abap_false.
-          ajson = ajson->filter( zcl_ajson_extensions=>filter_empty_zero_null( ) ).
+          ajson = ajson->filter( /apmg/cl_ajson_extensions=>filter_empty_zero_null( ) ).
           IF manifest-private = abap_false.
             INSERT `/private` INTO TABLE skip_paths.
           ENDIF.
@@ -362,7 +447,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
         result = ajson->stringify( 2 ).
       CATCH zcx_ajson_error INTO DATA(error).
-        RAISE EXCEPTION TYPE zcx_error_prev EXPORTING previous = error.
+        RAISE EXCEPTION TYPE /apmg/cx_error_prev EXPORTING previous = error.
     ENDTRY.
 
   ENDMETHOD.
@@ -375,7 +460,7 @@ CLASS zcl_package_json IMPLEMENTATION.
     IF sy-subrc = 0.
       result = <instance>-instance.
     ELSE.
-      result = NEW zcl_package_json(
+      result = NEW /apmg/cl_package_json(
         package = package
         name    = name
         version = version
@@ -400,8 +485,8 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD get_package_key.
 
-    result = |{ zif_persist_apm=>c_key_type-package }:{ package }:|
-          && |{ zif_persist_apm=>c_key_extra-package_json }|.
+    result = |{ /apmg/if_persist_apm=>c_key_type-package }:{ package }:|
+          && |{ /apmg/if_persist_apm=>c_key_extra-package_json }|.
 
   ENDMETHOD.
 
@@ -438,8 +523,8 @@ CLASS zcl_package_json IMPLEMENTATION.
 
   METHOD list.
 
-    DATA(list) = db_persist->list( zif_persist_apm=>c_key_type-package && |:{ filter }%:|
-      && zif_persist_apm=>c_key_extra-package_json ).
+    DATA(list) = db_persist->list( /apmg/if_persist_apm=>c_key_type-package && |:{ filter }%:|
+      && /apmg/if_persist_apm=>c_key_extra-package_json ).
 
     LOOP AT list ASSIGNING FIELD-SYMBOL(<list>).
       CONVERT TIME STAMP <list>-timestamp
@@ -449,7 +534,7 @@ CLASS zcl_package_json IMPLEMENTATION.
 
       DATA(changed_at) = |{ date DATE = ISO } { time TIME = ISO }|.
 
-      DATA(result_item) = VALUE zif_package_json=>ty_package(
+      DATA(result_item) = VALUE /apmg/if_package_json=>ty_package(
         key            = <list>-keys
         package        = get_package_from_key( <list>-keys )
         changed_by     = <list>-user
@@ -465,7 +550,7 @@ CLASS zcl_package_json IMPLEMENTATION.
             result_item-description = package_json-description.
             result_item-type        = package_json-type.
             result_item-private     = package_json-private.
-          CATCH zcx_error ##NO_HANDLER.
+          CATCH /apmg/cx_error ##NO_HANDLER.
         ENDTRY.
       ENDIF.
 
@@ -525,89 +610,6 @@ CLASS zcl_package_json IMPLEMENTATION.
       result-os,
       result-cpu,
       result-db.
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~delete.
-
-    db_persist->delete( key ).
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~exists.
-
-    TRY.
-        db_persist->load( key ).
-        result = abap_true.
-      CATCH zcx_error.
-        result = abap_false.
-    ENDTRY.
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~get.
-
-    result = CORRESPONDING #( manifest ).
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~get_json.
-
-    result = convert_manifest_to_json(
-      manifest        = manifest
-      is_package_json = abap_true
-      is_complete     = is_complete ).
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~is_valid.
-
-    TRY.
-        result = xsdbool( zcl_package_json_valid=>check( manifest ) IS INITIAL ).
-      CATCH zcx_error.
-        result = abap_false.
-    ENDTRY.
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~load.
-
-    zif_package_json~set_json( db_persist->load( key )-value ).
-    result = me.
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~save.
-
-    check_manifest( manifest ).
-    db_persist->save(
-      key   = key
-      value = zif_package_json~get_json( ) ).
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~set.
-
-    manifest = CORRESPONDING #( package_json ).
-    check_manifest( manifest ).
-    manifest = sort_manifest( manifest ).
-    result   = me.
-
-  ENDMETHOD.
-
-
-  METHOD zif_package_json~set_json.
-
-    manifest = convert_json_to_manifest( json ).
-    result   = me.
 
   ENDMETHOD.
 ENDCLASS.

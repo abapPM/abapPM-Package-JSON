@@ -4,7 +4,7 @@
   </picture>
 </div>
 
-![Version](https://img.shields.io/endpoint?url=https://shield.abappm.com/github/abapPM/abapPM-Package-JSON/src/zif_package_json.intf.abap/c_version&label=Version&color=blue)
+![Version](https://img.shields.io/endpoint?url=https://shield.abappm.com/github/abapPM/abapPM-Package-JSON/src/%2523apmg%2523if_package_json.intf.abap/c_version&label=Version&color=blue)
 
 [![License](https://img.shields.io/github/license/abapPM/abapPM-Package-JSON?label=License&color=success)](https://github.com/abapPM/abapPM-Package-JSON/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?color=success)](https://github.com/abapPM/.github/blob/main/CODE_OF_CONDUCT.md)
@@ -12,7 +12,7 @@
 
 # Package JSON for apm
 
-Module used by apm to convert between package.abap.json and corresponding ABAP schemas. Persists data in `ZABAPPM` table.
+Module used by apm to convert between `package.abap.json` and corresponding ABAP schemas. Persists data in `ZABAPPM` table.
 
 apm is a *package manager* 📦 for ABAP applications and modules, a *website* 🌐, and a *registry* 📑.
 
@@ -42,7 +42,7 @@ All contributions are welcome! Read our [Contribution Guidelines](https://github
 
 You can install the developer version of `@apm/package-json` using [abapGit](https://github.com/abapGit/abapGit) by creating a new online repository for `https://github.com/abapPM/abapPM-Package-JSON`.
 
-Recommended SAP package: `$APM-PACKAGE-JSON`
+Recommended SAP package: `/APMG/APM-PACKAGE-JSON`
 
 ## About
 
@@ -50,4 +50,4 @@ Made with ❤ in Canada
 
 Copyright 2025 apm.to Inc. <https://apm.to>
 
-Follow [@marcf.be](https://bsky.app/profile/marcf.be) on Blueksy and [@marcfbe](https://linkedin.com/in/marcfbe) or LinkedIn
+Follow [@marcf.be](https://bsky.app/profile/marcf.be) on Bluesky and [@marcfbe](https://linkedin.com/in/marcfbe) or LinkedIn

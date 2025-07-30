@@ -12,7 +12,7 @@
 
 # Package JSON for apm
 
-Module used by apm to convert between package.abap.json and corresponding ABAP schemas. Persists data in `ZABAPPM` table.
+Module used by apm to convert between `package.abap.json` and corresponding ABAP schemas. Persists data in `ZABAPPM` table.
 
 apm is a *package manager* 📦 for ABAP applications and modules, a *website* 🌐, and a *registry* 📑.
 

@@ -16,71 +16,85 @@ CLASS /apmg/cl_package_json_valid DEFINITION
         !manifest     TYPE /apmg/if_types=>ty_manifest
       RETURNING
         VALUE(result) TYPE string_table.
+
     CLASS-METHODS is_valid_package_type
       IMPORTING
         !type         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_sap_package
       IMPORTING
         !package      TYPE devclass
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_name
       IMPORTING
         !name         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_scoped_name
       IMPORTING
         !name         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_version
       IMPORTING
         !version      TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_version_range
       IMPORTING
         !range        TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_email
       IMPORTING
         !email        TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_url
       IMPORTING
         !url          TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_engine
       IMPORTING
         !engine       TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_os
       IMPORTING
         !os           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_cpu
       IMPORTING
         !cpu          TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_db
       IMPORTING
         !db           TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
     CLASS-METHODS is_valid_timestamp
       IMPORTING
         !timestamp    TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.

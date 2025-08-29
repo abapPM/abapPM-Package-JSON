@@ -111,6 +111,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
     APPEND LINES OF lcl_validate=>validate_persons( manifest ) TO result.
     APPEND LINES OF lcl_validate=>validate_engines( manifest ) TO result.
     APPEND LINES OF lcl_validate=>validate_dependencies( manifest ) TO result.
+    APPEND LINES OF lcl_validate=>validate_devclass( manifest ) TO result.
 
   ENDMETHOD.
 

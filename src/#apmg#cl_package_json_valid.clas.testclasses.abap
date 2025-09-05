@@ -12,6 +12,8 @@ CLASS ltcl_package_json_valid DEFINITION FINAL FOR TESTING
       is_valid_email FOR TESTING,
       is_valid_url FOR TESTING.
 
+    " TODO: More tests
+
 ENDCLASS.
 
 CLASS ltcl_package_json_valid IMPLEMENTATION.

@@ -95,6 +95,12 @@ CLASS /apmg/cl_package_json_valid DEFINITION
       RETURNING
         VALUE(result) TYPE abap_bool.
 
+    CLASS-METHODS is_valid_abap_language_version
+      IMPORTING
+        !vers         TYPE string
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -111,7 +117,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
     APPEND LINES OF lcl_validate=>validate_persons( manifest ) TO result.
     APPEND LINES OF lcl_validate=>validate_engines( manifest ) TO result.
     APPEND LINES OF lcl_validate=>validate_dependencies( manifest ) TO result.
-    APPEND LINES OF lcl_validate=>validate_devclass( manifest ) TO result.
+    APPEND LINES OF lcl_validate=>validate_sap_package( manifest ) TO result.
 
   ENDMETHOD.
 
@@ -119,6 +125,23 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
   METHOD is_scoped_name.
 
     result = xsdbool( is_valid_name( name ) AND name(1) = '@' AND name CS '/' ).
+
+  ENDMETHOD.
+
+
+  METHOD is_valid_abap_language_version.
+
+    DATA(vers_val) = vers.
+
+    SHIFT vers_val LEFT DELETING LEADING '!'.
+
+    result = xsdbool(
+      vers_val IS INITIAL OR
+      vers_val = /apmg/if_types=>c_abap_language_version-standard OR
+      vers_val = /apmg/if_types=>c_abap_language_version-key_user OR
+      vers_val = /apmg/if_types=>c_abap_language_version-cloud_development OR
+      vers_val = /apmg/if_types=>c_abap_language_version-ignore OR
+      vers_val = /apmg/if_types=>c_abap_language_version-undefined ).
 
   ENDMETHOD.
 

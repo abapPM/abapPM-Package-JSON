@@ -146,7 +146,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "hdb"`
       && `|  ],`
       && `|  "private": true,`
-      && `|  "readme": "# Readme"`
+      && `|  "readme": "# Readme",`
+      && `|  "sapPackage": {`
+      && `|    "default": "/APMG/TEST",`
+      && `|    "softwareComponent": "HOME",`
+      && `|    "abapLanguageVersion": "standard"`
+      && `|  }`
       && `|}`.
 
     test_json_full = ``
@@ -230,6 +235,11 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|  ],`
       && `|  "private": true,`
       && `|  "readme": "# Readme",`
+      && `|  "sapPackage": {`
+      && `|    "default": "/APMG/TEST",`
+      && `|    "softwareComponent": "HOME",`
+      && `|    "abapLanguageVersion": "standard"`
+      && `|  },`
       && `|  "dist": {`
       && `|    "fileCount": 8,`
       && `|    "shasum": "be",`
@@ -343,7 +353,11 @@ CLASS ltcl_package_json IMPLEMENTATION.
       cpu                   = VALUE #( ( `x86-64` ) )
       db                    = VALUE #( ( `hdb` ) )
       readme                = `# Readme`
-      private               = abap_true ).
+      private               = abap_true
+      sap_package           = VALUE #(
+                                default               = `/APMG/TEST`
+                                software_component    = `HOME`
+                                abap_language_version = `standard` ) ).
 
     test_manifest = CORRESPONDING #( test_package_json ).
 

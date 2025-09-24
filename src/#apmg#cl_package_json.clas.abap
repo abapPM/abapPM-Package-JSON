@@ -83,6 +83,7 @@ CLASS /apmg/cl_package_json DEFINITION
         !manifest        TYPE /apmg/if_types=>ty_manifest
         !is_package_json TYPE abap_bool DEFAULT abap_false
         !is_complete     TYPE abap_bool DEFAULT abap_false
+        !is_deprecated   TYPE abap_bool DEFAULT abap_false
       RETURNING
         VALUE(result)    TYPE string
       RAISING
@@ -294,7 +295,7 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
         cpu           TYPE string_table,
         db            TYPE string_table,
         private       TYPE abap_bool,
-        deprecated    TYPE abap_bool,
+        deprecated    TYPE string,
         dist          TYPE /apmg/if_types=>ty_dist,
         readme        TYPE string,
         sap_package   TYPE /apmg/if_types=>ty_sap_package,
@@ -410,7 +411,9 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
             iv_val  = dependency-range ).
         ENDLOOP.
 
-        IF is_complete = abap_false.
+        IF is_deprecated = abap_true.
+          ajson = ajson->filter( /apmg/cl_ajson_extensions=>filter_deprecated( ) ).
+        ELSEIF is_complete = abap_false.
           ajson = ajson->filter( /apmg/cl_ajson_extensions=>filter_empty_zero_null( ) ).
           IF manifest-private = abap_false.
             INSERT `/private` INTO TABLE skip_paths.

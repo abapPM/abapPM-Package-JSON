@@ -253,7 +253,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|      }`
       && `|    ]`
       && `|  },`
-      && `|  "deprecated": true,`
+      && `|  "deprecated": "This package is deprecated",`
       && `|  "_id": "test@1.0.0",`
       && `|  "_abapVersion": "7.54.0",`
       && `|  "_apmVersion": "1.0.0"`
@@ -304,7 +304,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|      }`
       && `|    ]`
       && `|  },`
-      && `|  "deprecated": true`
+      && `|  "deprecated": "This package is deprecated"`
       && `|}`.
 
     test_json             = prepare_string( test_json ).
@@ -361,7 +361,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
 
     test_manifest = CORRESPONDING #( test_package_json ).
 
-    test_manifest-deprecated    = abap_true.
+    test_manifest-deprecated    = 'This package is deprecated'.
     test_manifest-dist          = VALUE #(
                                     file_count    = 8
                                     integrity     = `edge`

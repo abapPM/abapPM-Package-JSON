@@ -415,9 +415,6 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
           IF manifest-private = abap_false.
             INSERT `/private` INTO TABLE skip_paths.
           ENDIF.
-          IF manifest-deprecated = abap_false.
-            INSERT `/deprecated` INTO TABLE skip_paths.
-          ENDIF.
         ENDIF.
 
         IF is_package_json = abap_true.

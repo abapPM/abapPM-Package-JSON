@@ -9,8 +9,6 @@ CLASS /apmg/cl_package_json_valid DEFINITION
 * Copyright 2024 apm.to Inc. <https://apm.to>
 * SPDX-License-Identifier: MIT
 ************************************************************************
-* TODO: More unit tests
-************************************************************************
   PUBLIC SECTION.
 
     CLASS-METHODS check

@@ -9,6 +9,8 @@ CLASS /apmg/cl_package_json_valid DEFINITION
 * Copyright 2024 apm.to Inc. <https://apm.to>
 * SPDX-License-Identifier: MIT
 ************************************************************************
+* TODO: More unit tests
+************************************************************************
   PUBLIC SECTION.
 
     CLASS-METHODS check
@@ -29,13 +31,19 @@ CLASS /apmg/cl_package_json_valid DEFINITION
       RETURNING
         VALUE(result) TYPE abap_bool.
 
-    CLASS-METHODS is_valid_name
+    CLASS-METHODS is_scoped
       IMPORTING
         !name         TYPE string
       RETURNING
         VALUE(result) TYPE abap_bool.
 
-    CLASS-METHODS is_scoped_name
+    CLASS-METHODS is_valid_scope
+      IMPORTING
+        !scope        TYPE string
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
+    CLASS-METHODS is_valid_name
       IMPORTING
         !name         TYPE string
       RETURNING
@@ -122,9 +130,9 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD is_scoped_name.
+  METHOD is_scoped.
 
-    result = xsdbool( is_valid_name( name ) AND name(1) = '@' AND name CS '/' ).
+    result = xsdbool( name IS NOT INITIAL AND name(1) = '@' AND name CS '/' ).
 
   ENDMETHOD.
 
@@ -133,7 +141,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
     DATA(vers_val) = vers.
 
-    SHIFT vers_val LEFT DELETING LEADING '!'.
+    SHIFT vers_val LEFT DELETING LEADING '!'. " not
 
     result = xsdbool(
       vers_val IS INITIAL OR
@@ -150,7 +158,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
     DATA(cpu_val) = cpu.
 
-    SHIFT cpu_val LEFT DELETING LEADING '!'.
+    SHIFT cpu_val LEFT DELETING LEADING '!'. " not
 
     result = xsdbool(
       cpu_val IS INITIAL OR
@@ -210,12 +218,23 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
   METHOD is_valid_name.
 
-    " https://www.npmjs.com/package/validate-npm-package-name
-    IF strlen( name )
+    DATA(scope)        = ``.
+    DATA(package_name) = name.
+
+    IF is_scoped( name ).
+      scope        = substring_before( val = name sub = '/' ).
+      package_name = substring_after( val = name sub = '/' ).
+
+      result = is_valid_scope( scope ).
+
+      CHECK result = abap_true.
+    ENDIF.
+
+    IF strlen( package_name )
       BETWEEN /apmg/if_types=>c_package_name-min_length
           AND /apmg/if_types=>c_package_name-max_length.
 
-      FIND REGEX /apmg/if_types=>c_package_name-regex IN name RESPECTING CASE ##REGEX_POSIX.
+      FIND REGEX /apmg/if_types=>c_package_name-regex IN package_name RESPECTING CASE ##REGEX_POSIX.
       result = xsdbool( sy-subrc = 0 ).
     ELSE.
       result = abap_false.
@@ -228,7 +247,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
     DATA(os_val) = os.
 
-    SHIFT os_val LEFT DELETING LEADING '!'.
+    SHIFT os_val LEFT DELETING LEADING '!'. " not
 
     result = xsdbool(
       os_val IS INITIAL OR
@@ -270,6 +289,21 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
     " Workaround for missing validation of empty namespace
     IF result = abap_true AND package CP '//*'.
+      result = abap_false.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD is_valid_scope.
+
+    IF strlen( scope )
+      BETWEEN /apmg/if_types=>c_scope-min_length
+          AND /apmg/if_types=>c_scope-max_length.
+
+      FIND REGEX /apmg/if_types=>c_scope-regex IN scope RESPECTING CASE ##REGEX_POSIX.
+      result = xsdbool( sy-subrc = 0 ).
+    ELSE.
       result = abap_false.
     ENDIF.
 

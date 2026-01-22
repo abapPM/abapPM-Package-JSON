@@ -243,7 +243,8 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
     IF issues IS NOT INITIAL.
       RAISE EXCEPTION TYPE /apmg/cx_error_text
         EXPORTING
-          text = |Invalid package json:\n{ concat_lines_of( table = issues sep = |\n| ) }|.
+          text     = 'Invalid package manifest (see longtext)'
+          longtext = concat_lines_of( table = issues sep = |\n| ).
     ENDIF.
 
   ENDMETHOD.

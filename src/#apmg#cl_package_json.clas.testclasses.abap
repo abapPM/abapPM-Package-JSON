@@ -322,42 +322,41 @@ CLASS ltcl_package_json IMPLEMENTATION.
       version               = `1.0.0`
       description           = `hello world`
       type                  = `module`
-      keywords              = VALUE #( ( `apm` ) )
+      keywords              = VALUE #( (                   `apm` ) )
       homepage              = `https://abappm.com`
       icon                  = `https://abappm.com/apm_logo.svg`
       bugs                  = VALUE #(
-                                url   = `https://abappm.com/bugs`
-                                email = `support@test.com` )
+                             url                   = `https://abappm.com/bugs`
+                             email                 = `support@test.com` )
       license               = `MIT`
       author                = person
       contributors          = VALUE #( ( person ) )
       maintainers           = VALUE #( ( person ) )
       main                  = `test.prog`
-      man                   = VALUE #( ( `manual.md` ) )
+      man                   = VALUE #( (                   `manual.md` ) )
       repository            = VALUE #(
-                                type      = `http`
-                                url       = `https://github.com/abapPM/abapPM`
-                                directory = `subdir` )
+                             type                  = `http`
+                             url                   = `https://github.com/abapPM/abapPM`
+                             directory             = `subdir` )
       funding               = VALUE #(
-                                type = `github`
-                                url  = `https://github.com/abapPM` )
-      dependencies          = VALUE #( ( key = `dep2` range = `2.0.0` ) )
-      dev_dependencies      = VALUE #( ( key = `dep3` range = `>3` ) )
-      optional_dependencies = VALUE #( ( key = `dep4` range = `^4.1.0` ) )
-      peer_dependencies     = VALUE #( ( key = `dep5` range = `^5.0.1` ) )
-      bundle_dependencies   = VALUE #( ( `dep2` ) )
-      engines               = VALUE #(
-                                ( key = `abap` range = `>=7.50` )
-                                ( key = `apm` range = `>=1` ) )
-      os                    = VALUE #( ( `linux` ) )
-      cpu                   = VALUE #( ( `x86-64` ) )
-      db                    = VALUE #( ( `hdb` ) )
+                             type                  = `github`
+                             url                   = `https://github.com/abapPM` )
+      dependencies          = VALUE #( ( key               = `dep2` range = `2.0.0` ) )
+      dev_dependencies      = VALUE #( ( key               = `dep3` range = `>3` ) )
+      optional_dependencies = VALUE #( ( key               = `dep4` range = `^4.1.0` ) )
+      peer_dependencies     = VALUE #( ( key               = `dep5` range = `^5.0.1` ) )
+      bundle_dependencies   = VALUE #( (                   `dep2` ) )
+      engines               = VALUE #( ( key               = `abap` range = `>=7.50` )
+                                       ( key               = `apm`  range = `>=1` ) )
+      os                    = VALUE #( (                   `linux` ) )
+      cpu                   = VALUE #( (                   `x86-64` ) )
+      db                    = VALUE #( (                   `hdb` ) )
       readme                = `# Readme`
       private               = abap_true
       sap_package           = VALUE #(
-                                default               = `/APMG/TEST`
-                                software_component    = `HOME`
-                                abap_language_version = `standard` ) ).
+                             default               = `/APMG/TEST`
+                             software_component    = `HOME`
+                             abap_language_version = `standard` ) ).
 
     test_manifest = CORRESPONDING #( test_package_json ).
 
@@ -450,7 +449,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
     test_valid( 'ZTEST,test,1.0.0' ).
     test_valid( '/NAMESPC/TEST,test,1.0.0' ).
     " Various names
-    test_valid( '$TEST,test_long_name-with-special-characters,1.0.0' ).
+    test_valid( '$TEST,test-long-name-with-special-characters,1.0.0' ).
     test_valid( '$TEST,@scope/test,1.0.0' ).
     " Various versions
     test_valid( '$TEST,test,1.0.0' ).
@@ -480,6 +479,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
     test_invalid( '$TEST,/test,1.0.0' ).
     test_invalid( '$TEST,test/,1.0.0' ).
     test_invalid( '$TEST,scope/test,1.0.0' ).
+    test_invalid( '$TEST,test_long_name-with-special-characters,1.0.0' ).
     test_invalid( '$TEST,t,1.0.0' ).
     test_invalid( '$TEST,tt,1.0.0' ).
     test_invalid( |$TEST,{ repeat( val = 't' occ = 215 ) },1.0.0| ).
@@ -591,12 +591,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
     cut->set_json( prepare_string( json ) ).
 
     DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
-      name    = 'test'
-      version = '1.0.0'
+      name             = 'test'
+      version          = '1.0.0'
       dev_dependencies = VALUE #(
-                           ( key = `dep1` range = `2.0.0` )
-                           ( key = `dep2` range = `>3` )
-                           ( key = `dep3` range = `^4.1.0` ) ) ).
+                                  ( key = `dep1` range = `2.0.0` )
+                                  ( key = `dep2` range = `>3` )
+                                  ( key = `dep3` range = `^4.1.0` ) ) ).
 
     cl_abap_unit_assert=>assert_equals(
       act = cut->get( )
@@ -609,12 +609,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
     init_test( '$TEST' ).
 
     DATA(package_json) = VALUE /apmg/if_types=>ty_package_json(
-      name    = 'test'
-      version = '1.0.0'
+      name             = 'test'
+      version          = '1.0.0'
       dev_dependencies = VALUE #(
-                           ( key = `dep1` range = `2.0.0` )
-                           ( key = `dep2` range = `>3` )
-                           ( key = `dep3` range = `^4.1.0` ) ) ).
+                                  ( key = `dep1` range = `2.0.0` )
+                                  ( key = `dep2` range = `>3` )
+                                  ( key = `dep3` range = `^4.1.0` ) ) ).
 
     cut->set( package_json ).
 

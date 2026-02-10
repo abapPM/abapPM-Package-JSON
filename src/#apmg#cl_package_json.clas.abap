@@ -449,7 +449,8 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
           ajson = ajson->filter( zcl_ajson_filter_lib=>create_path_filter( iv_skip_paths = skip_path ) ).
         ENDIF.
 
-        result = ajson->stringify( 2 ).
+        " Stringify with final newline
+        result = ajson->stringify( 2 ) && |\n|.
       CATCH zcx_ajson_error INTO DATA(error).
         RAISE EXCEPTION TYPE /apmg/cx_error_prev EXPORTING previous = error.
     ENDTRY.

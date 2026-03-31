@@ -6,6 +6,16 @@
    <MASTER_LANGUAGE>E</MASTER_LANGUAGE>
    <STARTING_FOLDER>/src/</STARTING_FOLDER>
    <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>
+   <IGNORE>
+    <item>!/package.abap.json</item>
+    <item>!/README.md</item>
+   </IGNORE>
+   <REQUIREMENTS>
+    <item>
+     <COMPONENT>SAP_BASIS</COMPONENT>
+     <MIN_RELEASE>750</MIN_RELEASE>
+    </item>
+   </REQUIREMENTS>
    <VERSION_CONSTANT>/APMG/IF_PACKAGE_JSON=&gt;C_VERSION</VERSION_CONSTANT>
   </DATA>
  </asx:values>

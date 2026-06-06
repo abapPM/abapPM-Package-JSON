@@ -2,6 +2,7 @@
   "name": "@apm/package-json",
   "version": "1.0.0",
   "description": "Package JSON for apm",
+  "type": "module",
   "keywords": [
     "abap",
     "apm",

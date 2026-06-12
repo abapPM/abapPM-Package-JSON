@@ -368,7 +368,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
   METHOD is_valid_version.
 
     " Check if it is a semantic version
-    result = /apmg/cl_semver_functions=>valid( version ).
+    result = xsdbool( /apmg/cl_semver_functions=>valid( version ) IS NOT INITIAL ).
 
   ENDMETHOD.
 

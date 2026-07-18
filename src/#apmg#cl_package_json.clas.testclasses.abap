@@ -76,6 +76,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "apm"`
       && `|  ],`
       && `|  "homepage": "https://abappm.com",`
+      && `|  "changelog": "https://abappm.com/CHANGLOG.md",`
       && `|  "icon": "https://abappm.com/apm_logo.svg",`
       && `|  "bugs": {`
       && `|    "url": "https://abappm.com/bugs",`
@@ -105,6 +106,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    }`
       && `|  ],`
       && `|  "main": "test.prog",`
+      && `|  "files": [`
+      && `|    "yes.abap"`
+      && `|  ],`
+      && `|  "ignore": [`
+      && `|    "no.abap"`
+      && `|  ],`
       && `|  "man": [`
       && `|    "manual.md"`
       && `|  ],`
@@ -150,9 +157,11 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|  "sapPackage": {`
       && `|    "default": "/APMG/TEST",`
       && `|    "softwareComponent": "HOME",`
+      && `|    "applicationComponent": "BC-ABA",`
       && `|    "abapLanguageVersion": "standard"`
       && `|  }`
-      && `|}`.
+      && `|}`
+      && `|`.
 
     test_json_full = ``
       && `{`
@@ -164,6 +173,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "apm"`
       && `|  ],`
       && `|  "homepage": "https://abappm.com",`
+      && `|  "changelog": "https://abappm.com/CHANGLOG.md",`
       && `|  "icon": "https://abappm.com/apm_logo.svg",`
       && `|  "bugs": {`
       && `|    "url": "https://abappm.com/bugs",`
@@ -193,6 +203,12 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    }`
       && `|  ],`
       && `|  "main": "test.prog",`
+      && `|  "files": [`
+      && `|    "yes.abap"`
+      && `|  ],`
+      && `|  "ignore": [`
+      && `|    "no.abap"`
+      && `|  ],`
       && `|  "man": [`
       && `|    "manual.md"`
       && `|  ],`
@@ -238,6 +254,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|  "sapPackage": {`
       && `|    "default": "/APMG/TEST",`
       && `|    "softwareComponent": "HOME",`
+      && `|    "applicationComponent": "BC-ABA",`
       && `|    "abapLanguageVersion": "standard"`
       && `|  },`
       && `|  "dist": {`
@@ -257,7 +274,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|  "_id": "test@1.0.0",`
       && `|  "_abapVersion": "7.54.0",`
       && `|  "_apmVersion": "1.0.0"`
-      && `|}`.
+      && `|}`
+      && `|`.
 
     test_json_abbreviated = ``
       && `{`
@@ -305,7 +323,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    ]`
       && `|  },`
       && `|  "deprecated": "This package is deprecated"`
-      && `|}`.
+      && `|}`
+      && `|`.
 
     test_json             = prepare_string( test_json ).
     test_json_full        = prepare_string( test_json_full ).
@@ -324,6 +343,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       type                  = `module`
       keywords              = VALUE #( (                   `apm` ) )
       homepage              = `https://abappm.com`
+      changelog             = `https://abappm.com/CHANGLOG.md`
       icon                  = `https://abappm.com/apm_logo.svg`
       bugs                  = VALUE #(
                              url                   = `https://abappm.com/bugs`
@@ -333,6 +353,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       contributors          = VALUE #( ( person ) )
       maintainers           = VALUE #( ( person ) )
       main                  = `test.prog`
+      files                 = VALUE #( (                   `yes.abap` ) )
+      ignore                = VALUE #( (                   `no.abap` ) )
       man                   = VALUE #( (                   `manual.md` ) )
       repository            = VALUE #(
                              type                  = `http`
@@ -356,6 +378,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       sap_package           = VALUE #(
                              default               = `/APMG/TEST`
                              software_component    = `HOME`
+                             application_component = `BC-ABA`
                              abap_language_version = `standard` ) ).
 
     test_manifest = CORRESPONDING #( test_package_json ).
@@ -586,7 +609,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "dep2": ">3",`
       && `|    "dep3": "^4.1.0"`
       && `|  }`
-      && `|}`.
+      && `|}`
+      && `|`.
 
     cut->set_json( prepare_string( json ) ).
 
@@ -627,7 +651,8 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "dep2": ">3",`
       && `|    "dep3": "^4.1.0"`
       && `|  }`
-      && `|}`.
+      && `|}`
+      && `|`.
 
     cl_abap_unit_assert=>assert_equals(
       act = cut->get_json( )

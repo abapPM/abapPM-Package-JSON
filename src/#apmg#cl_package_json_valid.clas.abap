@@ -182,7 +182,7 @@ CLASS /apmg/cl_package_json_valid IMPLEMENTATION.
 
     result = xsdbool(
       cpu_val IS INITIAL OR
-      cpu_val = /apmg/if_types=>c_cpu-x86_64 OR
+      cpu_val = /apmg/if_types=>c_cpu-x64 OR
       cpu_val = /apmg/if_types=>c_cpu-power_pc OR
       cpu_val = /apmg/if_types=>c_cpu-sparc ).
 

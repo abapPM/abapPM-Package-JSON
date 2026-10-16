@@ -147,7 +147,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "linux"`
       && `|  ],`
       && `|  "cpu": [`
-      && `|    "x86-64"`
+      && `|    "x64"`
       && `|  ],`
       && `|  "db": [`
       && `|    "hdb"`
@@ -244,7 +244,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "linux"`
       && `|  ],`
       && `|  "cpu": [`
-      && `|    "x86-64"`
+      && `|    "x64"`
       && `|  ],`
       && `|  "db": [`
       && `|    "hdb"`
@@ -304,7 +304,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       && `|    "linux"`
       && `|  ],`
       && `|  "cpu": [`
-      && `|    "x86-64"`
+      && `|    "x64"`
       && `|  ],`
       && `|  "db": [`
       && `|    "hdb"`
@@ -371,7 +371,7 @@ CLASS ltcl_package_json IMPLEMENTATION.
       engines               = VALUE #( ( key               = `abap` range = `>=7.50` )
                                        ( key               = `apm`  range = `>=1` ) )
       os                    = VALUE #( (                   `linux` ) )
-      cpu                   = VALUE #( (                   `x86-64` ) )
+      cpu                   = VALUE #( (                   `x64` ) )
       db                    = VALUE #( (                   `hdb` ) )
       readme                = `# Readme`
       private               = abap_true

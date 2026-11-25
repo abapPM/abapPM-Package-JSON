@@ -503,7 +503,7 @@ CLASS /apmg/cl_package_json IMPLEMENTATION.
           IMPORTING
             ef_hmacstring = DATA(sha1) ).
 
-        TRANSLATE sha1 USING 'A0B1C2D3E4F5'.
+        sha1 = translate( val = sha1 from = 'ABCDEF' to = '012345' ).
 
         result = sha1.
 
